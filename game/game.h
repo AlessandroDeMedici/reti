@@ -9,7 +9,8 @@
 #define GIVE 0x01
 #define UNLOCK 0x02
 
-
+#define PLAYING 0x01
+#define STOPPED 0x02
 
 // per il momento assumiamo che se l'oggetto e' bloccato
 // viene stampata la stessa frase per tutti:

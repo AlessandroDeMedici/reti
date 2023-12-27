@@ -246,6 +246,38 @@ void objs()
 	}
 }
 
+// funzione che si occupa di far runnare il gioco
+void game()
+{
+	char buffer[128];
+	char command[32];
+	char arg1[32];
+	char arg2[32];
+	while(1){
+		printf("\r\033[K> ");
+		fgets(stdin,127,buffer);
+		command = strtok(buffer," ");
+		arg1 = strtok(NULL," ");
+		arg2 = strtok(NULL," ");
+		switch (command):
+			case (NULL):
+				break;
+			case ("end"):
+				return 0;
+			case ("objs"):
+				objs();
+				break;
+			case ("use"):
+				use(buffer);
+			case ("take"):
+				take(buffer);
+			case ("look"):
+				look(buffer);
+			default:
+				break;
+	}
+}
+
 
 
 
