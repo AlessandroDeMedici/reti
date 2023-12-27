@@ -6,10 +6,12 @@
 #define LOCAZIONI 5
 
 // funzione di prova che inizializza gli oggetti
+// da modificare
+
 void init()
 {
-	memset(oggetti,0,sizeof(oggetto) * MAX_OGGETTI);
-	memset(locazioni,0,sizeof(location) *  MAX_LOCAZIONI);
+	memset(oggetti,0,sizeof(struct oggetto) * MAX_OGGETTI);
+	memset(locazioni,0,sizeof(struct location) *  MAX_LOCAZIONI);
 	// inizializzazione oggetti
 	for (int i = 0; i < OGGETTI; i++){
 		strcpy(oggetti[i].nome,"oggetto");
@@ -17,37 +19,38 @@ void init()
 		strcpy(oggetti[i].descrizioneBloccato,"questo oggetto e' ancora bloccato");
 		strcpy(oggetti[i].enigma,"enigma oggetto");
 		strcpy(oggetti[i].risposta,"risposta");
-		oggetti[i].bloccato = 1;
+		oggetti[i].status = BLOCCATO;
 	}
 
 	// inizializzazione location
 	for (int i = 0; i < LOCAZIONI; i++){
-		strcpy(locazioni[i].nome,"nome location");
-		strcpy(locazioni[i].descrizione,"dentro questa stanza si trovano gli oggetti ");
+		strcpy(locazioni[i].nome,"cucina");
+		strcpy(locazioni[i].descrizione,"dentro questa location (%s) si trovano gli oggetti");
 		for (int j = 0; j <  OGGETTI; j++){
-			strcat(locazioni[i].descrizione," %s")
+			strcat(locazioni[i].descrizione," %s");
 			locazioni[i].oggetti[j] = (oggetti + j);
 		}
 	}
 
 	// inizializzazione della stanza
-	strcpy(stanza.nome,"cucina");
-	strcpy(stanza.descrizione,"in questa cucina ci sono le location");
+	strcpy(stanza.nome,"casa");
+	strcpy(stanza.descrizione,"in questa room (%s) ci sono le location");
 	for (int i = 0; i < LOCAZIONI; i++){
-		strcat(stanza.descrizione, " %s,");
+		strcat(stanza.descrizione, " %s");
 		stanza.locazioni[i] = locazioni + i;
 	}
 }
 
 void stampaRoom()
 {
-	printf(stanza.descrizione,locazioni[0].nome,locazioni[1].nome,locazioni[2].nome,locazioni[3].nome,locazioni[4].nome);
+	printf(stanza.descrizione,stanza.nome,locazioni[0].nome,locazioni[1].nome,locazioni[2].nome,locazioni[3].nome,locazioni[4].nome);
+	printf("\n");
 }
 
 void stampaOggetto(struct oggetto * o)
 {
 	// devo controllare se l'oggetto e' bloccato
-	if (o->bloccato){
+	if (o->status == BLOCCATO){
 		printf("%s\n",o->descrizioneBloccato);
 	} else {
 		printf("%s\n",o->descrizione);
@@ -56,60 +59,73 @@ void stampaOggetto(struct oggetto * o)
 
 void stampaLocation(struct location * l)
 {
-	printf(l->descrizione,l->nome,l->oggetti[0].nome,l->oggetti[1].nome,l->oggetti[2].nome,l->oggetti[3].nome,l->oggetti[4].nome);
+	printf(l->descrizione,l->nome,l->oggetti[0]->nome,l->oggetti[1]->nome,l->oggetti[2]->nome,l->oggetti[3]->nome,l->oggetti[4]->nome);
+	printf("\n");
 }
 
 // funzione che restituisce un puntatore all'oggetto dato il nome
 struct oggetto * findOggetto(char * c)
 {
+	if (!c)
+		return NULL;
 	for (int i = 0; i < MAX_OGGETTI; i++){
 		if (!strcmp(oggetti[i].nome,c))
-			return oggetti[i];
+			return &oggetti[i];
 	}
 	return NULL;
 }
 
+struct location * findLocation(char * c)
+{
+	if (!c)
+		return NULL;
+	for (int i = 0; i < MAX_LOCAZIONI; i++){
+		if (!strcmp(locazioni[i].nome,c))
+			return &locazioni[i];
+	}
+	return NULL;
+	
+}
+
 struct ricetta * findRicetta(struct oggetto * o1, struct oggetto * o2)
 {
+	if (!o1)
+		return NULL;
 	for (int i = 0; i < MAX_RICETTE; i++){
 		// nelle ricette non conta l'ordine degli oggetti usati
 		if (	(o1 == ricette[i].oggetto1 && o2 == ricette[i].oggetto2) ||
 			(o1 == ricette[i].oggetto2 && o2 == ricette[i].oggetto1)
 				)
-			return ricette[i];
+			return &ricette[i];
 	}
 	return NULL;
 }
 
 void look(char * c)
 {
-	// discriminare output
-	char * cursore = c;
-	while (*cursore != ' ' && *cursore != '\0')
-		cursore++;
-	if (*cursore == '\0'){
-		// mi trovo alla fine della stringa e quindi devo stampare la room
+	// se non ci sono argomenti specificati devo stampare
+	// la descrizione della room
+	if (!c){
 		stampaRoom();
 		return;
 	}
-	cursore++;
 
-	for (int i = 0; i < MAX_OGGETTI; i++){
-		if (!strcmp(cursore,oggetti[i].nome)){
-			stampaOggetto(oggetti[i]);
-			return;
-		}
+	// find oggetto e stampa oggetto
+	struct oggetto * o = findOggetto(c);
+	if (o){
+		stampaOggetto(o);
+		return;
 	}
 
-	for (int i = 0; i < MAX_LOCAZIONI; i++){
-		if (!strcmp(cursore,locazioni[i].nome)){
-			stampaLocation(locazioni[i]);
-			return;
-		}
+	// find location e stampa location
+	struct location * l = findLocation(c);
+	if (l){
+		stampaLocation(l);
+		return;
 	}
 
 	// argomento sbagliato
-	printf("bad argument");
+	printf("look - bad argument\n");
 }
 
 void sblocca(struct oggetto * o)
@@ -117,10 +133,18 @@ void sblocca(struct oggetto * o)
 	char buffer[50];
 	printf("%s\n",o->enigma);
 	while(1){
-		fgets(stdin,63,buffer);
+		fgets(buffer,63,stdin);
+		for (int i = 0; i < 63; i++){
+			if (buffer[i] == '\n')
+			{
+				buffer[i] = '\0';
+				break;
+			}
+		}
 		if (!strcmp(buffer,o->risposta)){ // devo sbloccare l'oggetto
 			printf("\r\033[KCorretto!\n");
-			o->bloccato = 0;
+			o->status = FREE;
+			return;
 		} else if (!strcmp(buffer,"exit")){ // il player non vuole piu indovinare per ora
 			return;
 		} else { // errore (aggiungere tentativi--)
@@ -135,7 +159,9 @@ void ottieni(struct oggetto * o)
 	for (int i = 0; i < INVENTARIO; i++){
 		if (giocatore.inventario[i])
 			continue;
-		inventario[i] = o;
+		giocatore.inventario[i] = o;
+		o->status = TAKEN;
+		return;
 	}
 	printf("Inventario pieno!\n");
 }
@@ -143,31 +169,31 @@ void ottieni(struct oggetto * o)
 // funzione per ottenere l'oggetto
 void take(char * c)
 {
-	char *  cursore = c;
-	char buffer[64];
-	while (*cursore != ' ' && *cursore != '\0')
-		cursore++;
-
-	if (*cursore == '\0')
+	if (!c)
 	{
 		printf("look - bad argument\n");
 		return;
 	}
-	cursore++;
-
-	for (int i = 0; i < MAX_OGGETTI; i++){
-		if (!strcmp(cursore,oggetti[i].nome)){
-			// devo controllare se l'oggetto e' bloccato oppure no
-			struct oggetto * o = oggetti[i];
-			if (o->bloccato){
-				sblocca(o);
-			} else { // oggetto sbloccato
-				ottieni(o);
-			}
-			return;
-		}
+	
+	// provo ad ottenere l'oggetto
+	struct oggetto * o = findOggetto(c);
+	if (!o){ // oggetto non trovato
+		printf("look - non-existing object\n");
+		return;
 	}
-	printf("look - non-existing object\n");
+	// se l'oggetto e' gia' stato preso non posso prenderlo
+	// di nuovo
+	if (o->status == TAKEN)
+	{
+		printf("L'oggetto e' gia stato preso\n");
+		return;
+	}
+	// se l'oggetto e' bloccato provo a sbloccarlo
+	if (o->status == BLOCCATO)
+		sblocca(o);
+	// se l'oggetto non e' bloccato lo ottengo
+	else
+		ottieni(o);
 }
 
 // funzione di utilita per rimuovere un oggetto dall'inventario
@@ -192,28 +218,21 @@ size_t aggiungiInventario(struct oggetto * o)
 }
 
 // funzione per usare l'oggetto o gli oggetti
-void use(char * c)
+void use(char * obj1, char * obj2)
 {
-	char * use,obj1,obj2;
-	char * buffer;
-	struct oggetto * o1, o2;
+	struct oggetto * o1 = 0,* o2 = 0;
 	struct ricetta * r;
-	// faccio una copia del buffer
-	strcpy(buffer,c);
-	use = strtok(buffer," ");
-	obj1 = strtok(NULL," ");
-	obj2 = strtok(NULL," ");
 	if (!obj1)
 	{
 		printf("use - need at least 1 arugment\n");
+		return;
 	}
 	// ottengo i puntatori agli oggetti
 	o1 = findOggetto(obj1);
 	if (obj2)
 		o2 = findOggetto(obj2);
-
 	// cerco la ricetta
-	r = (o1,o2);
+	r = findRicetta(o1,o2);
 	if (!r){
 		printf("use - no recipe found\n");
 		return;
@@ -228,7 +247,7 @@ void use(char * c)
 			printf("Hai ottenuto %s\n",r->dest->nome);
 			break;
 		case (UNLOCK):
-			r->dest->bloccato = 0;
+			r->dest->status = FREE;
 			printf("Hai sbloccato %s\n",r->dest->nome);
 			break;
 	}
@@ -239,8 +258,8 @@ void objs()
 {
 	for (int i = 0; i < INVENTARIO; i++){
 		printf("%d: ", i + 1);
-		if (inventario[i])
-			printf("%s\n",inventario[i].nome);
+		if (giocatore.inventario[i])
+			printf("%s\n",giocatore.inventario[i]->nome);
 		else
 			printf("vuoto\n");
 	}
@@ -250,31 +269,39 @@ void objs()
 void game()
 {
 	char buffer[128];
-	char command[32];
-	char arg1[32];
-	char arg2[32];
+	char * command;
+	char * arg1;
+	char * arg2;
 	while(1){
-		printf("\r\033[K> ");
-		fgets(stdin,127,buffer);
+		printf("> ");
+		fgets(buffer,127,stdin);
+		for (int i =0; i < 128; i++){
+			if (buffer[i] == '\n'){
+				buffer[i] = '\0';
+				break;
+			}
+		}
 		command = strtok(buffer," ");
 		arg1 = strtok(NULL," ");
 		arg2 = strtok(NULL," ");
-		switch (command):
-			case (NULL):
-				break;
-			case ("end"):
-				return 0;
-			case ("objs"):
-				objs();
-				break;
-			case ("use"):
-				use(buffer);
-			case ("take"):
-				take(buffer);
-			case ("look"):
-				look(buffer);
-			default:
-				break;
+		if (!command)
+			continue;
+		else if (!strcmp(command,"end"))
+			break;
+		else if (!strcmp(command,"objs")){
+			objs();
+		}
+		else if (strstr(command,"use")){
+			use(arg1,arg2);
+		}
+		else if (strstr(command,"take")){
+			take(arg1);
+		}
+		else if (strstr(command,"look")){
+			look(arg1);
+		}
+		else 
+			continue;
 	}
 }
 

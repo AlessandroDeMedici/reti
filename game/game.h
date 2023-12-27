@@ -5,6 +5,9 @@
 
 #define INVENTARIO 5
 
+#define BLOCCATO 0x01
+#define TAKEN 0x02
+#define FREE 0x00
 
 #define GIVE 0x01
 #define UNLOCK 0x02
@@ -23,9 +26,8 @@ struct oggetto
 	char descrizioneBloccato[128];
 	char enigma[128];
 	char risposta[64];
-	char bloccato;
+	char status;
 };
-
 
 struct location
 {
@@ -33,7 +35,6 @@ struct location
 	char descrizione[128];
 	struct oggetto * oggetti[MAX_OGGETTI];
 };
-
 
 struct room
 {
@@ -62,7 +63,6 @@ struct game
 };
 
 
-
 // strutture che contengono gli oggetti (globale)
 struct oggetto oggetti[MAX_OGGETTI];
 
@@ -72,4 +72,20 @@ struct location locazioni[MAX_LOCAZIONI];
 // struttura che contiene le ricette (globale)
 struct ricetta ricette[MAX_RICETTE];
 
+void init();
+void stampaRoom();
+void stampaOggetto(struct oggetto *);
+void stampaLocation(struct location *);
+struct oggetto * findOggetto(char *);
+struct location * findLocation(char *);
+struct ricetta * findRicetta(struct oggetto*,struct oggetto *);
+void look(char *);
+void sblocca(struct oggetto*);
+void ottieni(struct oggetto*);
+void take(char *);
+void rimuoviInventario(struct oggetto *);
+size_t aggiungiInventario(struct oggetto *);
+void use(char *,char*);
+void objs();
+void game();
 
