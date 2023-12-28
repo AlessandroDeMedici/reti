@@ -3,11 +3,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
+// struttura globale per la room
 struct room stanza;
 
+// struttura globale per il giocatore
 struct player giocatore;
 
+// struttura globale per il gioco
 struct game gioco;
 
 // strutture che contengono gli oggetti (globale)

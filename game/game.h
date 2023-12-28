@@ -30,9 +30,9 @@
 struct oggetto
 {
 	char nome[64];
-	char descrizione[128];
-	char descrizioneBloccato[128];
-	char enigma[128];
+	char descrizione[256];
+	char descrizioneBloccato[256];
+	char enigma[256];
 	char risposta[64];
 	char status;
 };
@@ -40,14 +40,14 @@ struct oggetto
 struct location
 {
 	char nome[64];
-	char descrizione[128];
+	char descrizione[256];
 	struct oggetto * oggetti[MAX_OGGETTI];
 };
 
 struct room
 {
 	char nome[64];
-	char descrizione[128];
+	char descrizione[256];
 	struct location * locazioni[MAX_LOCAZIONI];
 };
 // variabile globale per la stanza
