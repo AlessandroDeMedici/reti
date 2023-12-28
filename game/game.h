@@ -49,13 +49,13 @@ struct room
 	char nome[64];
 	char descrizione[128];
 	struct location * locazioni[MAX_LOCAZIONI];
-} stanza;
+};
 // variabile globale per la stanza
 
 struct player
 {
 	struct oggetto * inventario[INVENTARIO];
-} giocatore;
+};
 
 struct ricetta
 {
@@ -69,17 +69,8 @@ struct game
 {
 	char status;
 	int token;
-} gioco;
+};
 
-
-// strutture che contengono gli oggetti (globale)
-struct oggetto oggetti[MAX_OGGETTI];
-
-// strutture che contengono le locazioni (globale)
-struct location locazioni[MAX_LOCAZIONI];
-
-// struttura che contiene le ricette (globale)
-struct ricetta ricette[MAX_RICETTE];
 
 void init();
 void stampaRoom();

@@ -4,6 +4,21 @@
 #include <stdlib.h>
 
 
+struct room stanza;
+
+struct player giocatore;
+
+struct game gioco;
+
+// strutture che contengono gli oggetti (globale)
+struct oggetto oggetti[MAX_OGGETTI];
+
+// strutture che contengono le locazioni (globale)
+struct location locazioni[MAX_LOCAZIONI];
+
+// struttura che contiene le ricette (globale)
+struct ricetta ricette[MAX_RICETTE];
+
 void aggiungiRicetta(struct oggetto * o1, struct oggetto * o2, struct oggetto * dst, char action)
 {
 	for (int i = 0; i < MAX_RICETTE; i++){
