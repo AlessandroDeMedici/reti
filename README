@@ -1,0 +1,33 @@
+cose da fare:
+	1. mettere il game online
+		l'idea consiste in questo: far girare il gioco solo sul server
+
+		i client possono soltanto inviare i messaggi e ricevere risposte
+
+		devo modificare la join room in modo che venga invaito al processo
+		figlio anche lo username, non e' strettamente necessario ma sicuramente puo
+		aiutare.
+
+		Il processo figlio a questo punto gestisce un array di player, ognuno dei quali
+		ha un suo sd
+
+		la validazione e tutto il resto viene fatto sul client
+
+		Ma quali sono i vantaggi di questa scelta? (app che gira solo su server)
+			sicuramente maggiore sicurezza
+
+			i client non possono modificare strutture o darsi roba strana
+
+			i client possono essere device stupidi, non e' richiesta grande capacita di
+			calcolo
+
+			la consistenza del gioco e' sempre garantita, si ha una singola istanza del gioco
+			sul server
+
+			i client non devono scaricare le mappe
+
+		tuttavia ci sono degli svantaggi:
+			
+			maggiore traffico di rete (non avviene alcuna validazione da client a server)
+			(alcune cose possono essere cachate tipo gli objs validi finche non vengono
+			effettuate operazioni come objs o simili)

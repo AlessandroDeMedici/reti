@@ -1,3 +1,5 @@
+#ifndef GAME_INCLUSA
+#define GAME_INCLUSA
 #include <time.h>
 #define MAX_LOCAZIONI 5
 #define MAX_OGGETTI 10
@@ -89,3 +91,4 @@ void use(char *,char*);
 void objs();
 void game();
 
+#endif
