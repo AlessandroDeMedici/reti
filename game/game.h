@@ -1,19 +1,27 @@
 #include <time.h>
 #define MAX_LOCAZIONI 5
-#define MAX_OGGETTI 5
+#define MAX_OGGETTI 10
 #define MAX_RICETTE 10
+#define MAX_TOKEN 1		// numero di token per vincere
+
 
 #define INVENTARIO 5
 
-#define BLOCCATO 0x01
-#define TAKEN 0x02
-#define FREE 0x00
+#define FREE 0x00		// oggetto raccoglibile
+#define BLOCCATO 0x01		// oggetto bloccato da enigma
+#define TAKEN 0x02		// oggetto nell'inventario
+#define HIDDEN 0x03		// oggetto nascosto
 
-#define GIVE 0x01
-#define UNLOCK 0x02
+
+#define GIVE 0x01		// oggetto HIDDEN -> TAKEN
+#define UNLOCK 0x02		// oggetto HIDDEN -> FREE
+#define TOKEN 0x03		// oggetto TOKEN
 
 #define PLAYING 0x01
 #define STOPPED 0x02
+
+
+
 
 // per il momento assumiamo che se l'oggetto e' bloccato
 // viene stampata la stessa frase per tutti:
@@ -60,7 +68,8 @@ struct ricetta
 struct game
 {
 	char status;
-};
+	int token;
+} gioco;
 
 
 // strutture che contengono gli oggetti (globale)

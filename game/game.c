@@ -1,50 +1,97 @@
 #include "game.h"
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
-#define OGGETTI 5
-#define LOCAZIONI 5
 
-// funzione di prova che inizializza gli oggetti
-// da modificare
+void aggiungiRicetta(struct oggetto * o1, struct oggetto * o2, struct oggetto * dst, char action)
+{
+	for (int i = 0; i < MAX_RICETTE; i++){
+		if (!ricette[i].oggetto1){ // mi fermo alla prima ricetta libera
+			ricette[i].oggetto1 = o1;
+			ricette[i].oggetto2 = o2;
+			ricette[i].dest = dst;
+			ricette[i].action = action;
+			return;
+		}
+	}
+}
 
+// funzione che inizializza la room e le sue strutture
 void init()
 {
 	memset(oggetti,0,sizeof(struct oggetto) * MAX_OGGETTI);
 	memset(locazioni,0,sizeof(struct location) *  MAX_LOCAZIONI);
-	// inizializzazione oggetti
-	for (int i = 0; i < OGGETTI; i++){
-		strcpy(oggetti[i].nome,"oggetto");
-		strcpy(oggetti[i].descrizione,"descrizione oggetto");
-		strcpy(oggetti[i].descrizioneBloccato,"questo oggetto e' ancora bloccato");
-		strcpy(oggetti[i].enigma,"enigma oggetto");
-		strcpy(oggetti[i].risposta,"risposta");
-		oggetti[i].status = BLOCCATO;
-	}
+	memset(ricette,0,sizeof(struct ricetta) * MAX_RICETTE);
 
-	// inizializzazione location
-	for (int i = 0; i < LOCAZIONI; i++){
-		strcpy(locazioni[i].nome,"cucina");
-		strcpy(locazioni[i].descrizione,"dentro questa location (%s) si trovano gli oggetti");
-		for (int j = 0; j <  OGGETTI; j++){
-			strcat(locazioni[i].descrizione," %s");
-			locazioni[i].oggetti[j] = (oggetti + j);
-		}
-	}
+	// INIZIALIZZAZIONE OGGETTI
+	// pistola
+	strcpy(oggetti[0].nome, "pistola");
+	strcpy(oggetti[0].descrizione, "Una vecchia pistola western.");
+	strcpy(oggetti[0].descrizioneBloccato, "La pistola è bloccata da un lucchetto.");
+	strcpy(oggetti[0].enigma, "Quante stelle ci sono nel cielo?");
+	strcpy(oggetti[0].risposta, "infinite");
+	oggetti[0].status = BLOCCATO;
 
-	// inizializzazione della stanza
-	strcpy(stanza.nome,"casa");
-	strcpy(stanza.descrizione,"in questa room (%s) ci sono le location");
-	for (int i = 0; i < LOCAZIONI; i++){
-		strcat(stanza.descrizione, " %s");
-		stanza.locazioni[i] = locazioni + i;
-	}
+	// cassaforte
+	strcpy(oggetti[1].nome, "cassaforte");
+	strcpy(oggetti[1].descrizione, "Una robusta cassaforte in metallo.");
+	strcpy(oggetti[1].descrizioneBloccato, "La cassaforte è bloccata saldamente.");
+	strcpy(oggetti[1].enigma, "Combinazione");
+	strcpy(oggetti[1].risposta, "3141");
+	oggetti[1].status = BLOCCATO;
+
+	// bottiglia
+	strcpy(oggetti[2].nome, "bottiglia");
+	strcpy(oggetti[2].descrizione, "La bottiglia sembra avere qualcosa al suo interno...");
+	strcpy(oggetti[2].descrizioneBloccato, "Una bottiglia apparentemente vuota.");
+	strcpy(oggetti[2].enigma, "Un alcolico con 3 lettere");
+	strcpy(oggetti[2].risposta, "gin");
+	oggetti[2].status = BLOCCATO;
+
+	// biglietto
+	strcpy(oggetti[3].nome, "biglietto");
+	strcpy(oggetti[3].descrizione, "Sul biglietto c'e' scritto: La combinazione della cassaforte sono le prime 4 cifre di pi");
+	oggetti[3].status = HIDDEN;
+	
+	// chiave
+	strcpy(oggetti[4].nome, "chiave");
+	strcpy(oggetti[4].descrizione, "Hai trovato la chiave per uscire dal saloon!");
+	oggetti[4].status = HIDDEN;
+	
+
+
+	// INIZIALIZZAZIONE LOCATION
+	// bancone
+	strcpy(locazioni[0].nome, "bancone");
+	strcpy(locazioni[0].descrizione, "Dietro al ++bancone++, puoi vedere qualche bicchiere sporco ed una **bottiglia**.");
+	// tavolo
+	strcpy(locazioni[1].nome, "tavolo");
+	strcpy(locazioni[1].descrizione, "Sul ++tavolo++ c'è una mappa del deserto e qualche sedia rovesciata, sopra al tavolo sembra esserci una piccola **cassaforte**.");
+
+	// pianoforte
+	strcpy(locazioni[2].nome, "pianoforte");
+	strcpy(locazioni[2].descrizione, "Il ++pianoforte++ sembra essere fuori uso da molto tempo.");
+
+	// mucca
+	strcpy(locazioni[3].nome, "mucca");
+	strcpy(locazioni[3].descrizione, "Una ++mucca++ solitaria pascola tranquillamente nel locale.");
+
+
+	// INIZIALIZZAZIONE ROOM
+	strcpy(stanza.nome, "saloon");
+	strcpy(stanza.descrizione, "Benvenuto nel saloon. Qui puoi trovare il ++bancone++, il ++tavolo++, il ++pianoforte++ e la ++mucca++.");
+	
+	// INIZIALIZZAZIONE RICETTE
+	// se uso la bottiglia posso raccogliere il biglietto
+	aggiungiRicetta(&oggetti[2],NULL,&oggetti[3],GIVE);
+	aggiungiRicetta(&oggetti[1],NULL,&oggetti[4],GIVE);
+	aggiungiRicetta(&oggetti[4],NULL,NULL,TOKEN);
 }
 
 void stampaRoom()
 {
-	printf(stanza.descrizione,stanza.nome,locazioni[0].nome,locazioni[1].nome,locazioni[2].nome,locazioni[3].nome,locazioni[4].nome);
-	printf("\n");
+	printf("%s\n",stanza.descrizione);
 }
 
 void stampaOggetto(struct oggetto * o)
@@ -59,8 +106,7 @@ void stampaOggetto(struct oggetto * o)
 
 void stampaLocation(struct location * l)
 {
-	printf(l->descrizione,l->nome,l->oggetti[0]->nome,l->oggetti[1]->nome,l->oggetti[2]->nome,l->oggetti[3]->nome,l->oggetti[4]->nome);
-	printf("\n");
+	printf("%s\n",l->descrizione);
 }
 
 // funzione che restituisce un puntatore all'oggetto dato il nome
@@ -69,8 +115,25 @@ struct oggetto * findOggetto(char * c)
 	if (!c)
 		return NULL;
 	for (int i = 0; i < MAX_OGGETTI; i++){
-		if (!strcmp(oggetti[i].nome,c))
+		if (!strcmp(oggetti[i].nome,c)){
+			if (oggetti[i].status == HIDDEN)
+				continue;
 			return &oggetti[i];
+		}
+	}
+	return NULL;
+}
+
+struct oggetto * findOggettoInventario(char * c)
+{
+	if (!c)
+		return NULL;
+	for (int i = 0; i < INVENTARIO; i++){
+		if (!giocatore.inventario[i])
+			continue;
+		if (!strcmp(giocatore.inventario[i]->nome,c)){
+			return giocatore.inventario[i];
+		}
 	}
 	return NULL;
 }
@@ -95,7 +158,7 @@ struct ricetta * findRicetta(struct oggetto * o1, struct oggetto * o2)
 		// nelle ricette non conta l'ordine degli oggetti usati
 		if (	(o1 == ricette[i].oggetto1 && o2 == ricette[i].oggetto2) ||
 			(o1 == ricette[i].oggetto2 && o2 == ricette[i].oggetto1)
-				)
+		   )
 			return &ricette[i];
 	}
 	return NULL;
@@ -109,8 +172,9 @@ void look(char * c)
 		stampaRoom();
 		return;
 	}
-
+	
 	// find oggetto e stampa oggetto
+	// se HIDDEN non viene trovato
 	struct oggetto * o = findOggetto(c);
 	if (o){
 		stampaOggetto(o);
@@ -199,6 +263,8 @@ void take(char * c)
 // funzione di utilita per rimuovere un oggetto dall'inventario
 void rimuoviInventario(struct oggetto * o)
 {
+	if (!o)
+		return;
 	for (int i = 0; i < INVENTARIO; i++){
 		if (giocatore.inventario[i] == o)
 			giocatore.inventario[i] = NULL;
@@ -208,9 +274,12 @@ void rimuoviInventario(struct oggetto * o)
 // funzione di utilita per aggiungere un oggetto all'inventario
 size_t aggiungiInventario(struct oggetto * o)
 {
+	if (!o)
+		return 0;
+
 	for (int i = 0; i < INVENTARIO; i++){
 		if (!giocatore.inventario[i]){
-			giocatore.inventario[i] = 0;
+			giocatore.inventario[i] = o;
 			return 0;
 		}
 	}
@@ -228,9 +297,15 @@ void use(char * obj1, char * obj2)
 		return;
 	}
 	// ottengo i puntatori agli oggetti
-	o1 = findOggetto(obj1);
+	o1 = findOggettoInventario(obj1);
+
+	if (!o1){
+		printf("use - oject not in inventory\n");
+		return;
+	}
 	if (obj2)
-		o2 = findOggetto(obj2);
+		o2 = findOggettoInventario(obj2);
+	
 	// cerco la ricetta
 	r = findRicetta(o1,o2);
 	if (!r){
@@ -244,14 +319,19 @@ void use(char * obj1, char * obj2)
 			rimuoviInventario(o1);
 			rimuoviInventario(o2);
 			aggiungiInventario(r->dest);
+			r->dest->status = TAKEN;
 			printf("Hai ottenuto %s\n",r->dest->nome);
 			break;
 		case (UNLOCK):
 			r->dest->status = FREE;
 			printf("Hai sbloccato %s\n",r->dest->nome);
+		case (TOKEN):
+			rimuoviInventario(o1);
+			gioco.token++;
+			printf("Hai ottenuto un token!\n");
 			break;
 	}
-}
+} 
 
 // stampa tutti gli oggetti nell'inventario
 void objs()
@@ -265,6 +345,10 @@ void objs()
 	}
 }
 
+void win(){
+	printf("Hai vinto!\n");
+}
+
 // funzione che si occupa di far runnare il gioco
 void game()
 {
@@ -272,6 +356,8 @@ void game()
 	char * command;
 	char * arg1;
 	char * arg2;
+	gioco.status = PLAYING;
+	gioco.token = 0;
 	while(1){
 		printf("> ");
 		fgets(buffer,127,stdin);
@@ -300,8 +386,12 @@ void game()
 		else if (strstr(command,"look")){
 			look(arg1);
 		}
-		else 
-			continue;
+		else
+			;
+		if (gioco.token == MAX_TOKEN){
+			win();
+			break;
+		}
 	}
 }
 
