@@ -31,3 +31,8 @@ cose da fare:
 			maggiore traffico di rete (non avviene alcuna validazione da client a server)
 			(alcune cose possono essere cachate tipo gli objs validi finche non vengono
 			effettuate operazioni come objs o simili)
+	2. MODIFICHE FATTE OGGI:
+		il gioco lo porto online e limito il traffico di rete in questo modo:
+			1. durante il game se puo essere fatto qualcosa in locale lo faccio in locale
+			2. i client quando fanno qualcosa che coinvolge il cambio di strutture lo notificano al server
+			3. i client quando hanno bisogno di dati aggiornati su di un oggetto richiedono che il suo stato venga aggiornato
