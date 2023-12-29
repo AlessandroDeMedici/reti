@@ -10,7 +10,6 @@
 #include "./lib-reti/lib-reti.h"
 
 
-struct player giocatori[MAX_PLAYERS];
 int indice = 0;
 
 int main(int argn, char * argv[])

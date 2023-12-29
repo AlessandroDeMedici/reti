@@ -22,7 +22,11 @@
 #define STARTED 0x01
 #define STOPPED 0x02
 
-
+// definizione degli opcodes
+#define UPDATE_OBJECT 0x01
+#define UNLOCK 0x02
+#define TAKE 0x03
+#define USE
 
 
 // per il momento assumiamo che se l'oggetto e' bloccato
