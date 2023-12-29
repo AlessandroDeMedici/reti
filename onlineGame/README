@@ -1,0 +1,14 @@
+in pratica il client non ha altro che un interfaccia
+invia il comando e riceve una risposta
+potrei anche solo fare che invia stringhe e riceve stringhe se il traffico di dati lo permette
+
+devo modificare game in modo che funzioni con i players e non con giocatore
+spostare giocatori in game.c
+fare una funzione che aggiunge il player
+
+ricordati che i giocatori hanno visibilita solo sul proprio inventario e sugli oggetti globali
+quindi e' possibile fare una cache per comandi tipo objs
+
+
+
+
