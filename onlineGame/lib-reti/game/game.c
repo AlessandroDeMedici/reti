@@ -22,6 +22,8 @@ void addPlayer(char * username, int sd)
 		return;
 	strcpy(giocatori[indice].username,username);
 	giocatori[indice].sd = sd;
+	giocatori[indice].p = 1;
+	indice++;
 }
 
 // funzione chiamata dal server per rispondere alla richiesta di aggiornamento dell'oggetto
@@ -35,6 +37,8 @@ void aggiornaOggetto(int sd)
 	o = &oggetti[id];
 	// invia lo status aggiornato dell'oggetto
 	ret = send(sd,&o->status,sizeof(o->status), 0);
+
+	printf("Invio al client %d lo status dell'oggetto %s (%d)\n",sd,o->nome,o->status);
 }
 
 // funzione chiamata dal server per sbloccare l'oggetto o
@@ -74,9 +78,12 @@ void ottieniOggetto(int sd)
 natb getPlayerId(int sd)
 {
 	natb id = 0;
-	for (;id < MAX_PLAYERS;id++)
+	for (;id < MAX_PLAYERS;id++){
+		if (!giocatori[id].p)
+			continue;
 		if (giocatori[id].sd == sd)
 			return id;
+	}
 
 	printf("getPlayerId - player not found\n");
 	return 0xFF;
@@ -198,8 +205,12 @@ void game(int sd, natb opcode)
 			getToken(sd);
 			break;
 		case (INC_TOKEN):
-			printf("%d ha fatto token()",sd);
+			printf("%d ha fatto token()\n",sd);
 			token();
+			break;
+		case (GET_TIME):
+			printf("%d ha fatto ottieniTempo()\n",sd);
+			ottieniTempo(sd);
 			break;
 	}	
 }
@@ -210,7 +221,8 @@ void sbloccaPlayers()
 	natb opcode = 250;
 	int ret;
 	for (int i = 0; i < MAX_PLAYERS; i++)
-		ret = send(giocatori[i].sd,&opcode,sizeof(opcode),0);
+		if (giocatori[i].p)
+			ret = send(giocatori[i].sd,&opcode,sizeof(opcode),0);
 }
 
 // funzione lanciata dal server per inviare il numero
@@ -225,6 +237,23 @@ void getToken(int sd)
 void token()
 {
 	gioco.token++;
+}
+
+// funzione lanciata dal server per scrivere lo start time
+// della partita
+void startTime()
+{
+	time(&gioco.start_time);
+}
+
+// funzione lanciata dal server per inviare il tempo
+void ottieniTempo(int sd)
+{
+	time_t start_time = gioco.start_time;
+	int ret;
+	start_time = htonl(start_time);
+	
+	ret = send(sd,&start_time,sizeof(start_time),0);
 }
 
 #else
@@ -255,6 +284,7 @@ void aggiornaOggetto(struct oggetto * o)
 	ret = recv(sd,&o->status,sizeof(status),0);
 	if (!ret) // disconnessione
 		printf("aggiornaOggetto - server disconnesso\n");
+	printf("Ho ricevuto dal server lo status dell'oggetto %s (%02X)\n",o->nome,o->status);
 } 
 
 // funzione che notifica il server che l'oggetto o e' stato 
@@ -548,10 +578,10 @@ void quitRoom()
 	natb opcode = QUIT_ROOM;
 	int ret = send(sd,&opcode,sizeof(opcode),0);
 	
-	// aspetto un messaggio di ok
-	ret = recv(sd,&opcode,sizeof(opcode),0);
+	printf("Sto tornando alla home...\n");
 	printHome();
 }
+
 
 // funzione lanciata dal client per gestire il gioco
 void game()
@@ -560,17 +590,15 @@ void game()
 	char * command;
 	char * arg1;
 	char * arg2;
+	
+	// inizializzo il game
 	gioco.status = STARTED;
 	gioco.token = 0;
+	ottieniTempo();
+	printf("game inizializzato\n");
+
 	while(1){
 		printf("> ");
-		getToken();
-		
-		if (gioco.token == MAX_TOKEN){
-			win();
-			quitRoom();
-			break;
-		}
 
 		fgets(buffer,127,stdin);
 
@@ -606,6 +634,14 @@ void game()
 		}
 		else
 			;
+		// aggiorna i token presenti
+		getToken();
+		
+		if (gioco.token == MAX_TOKEN){
+			win();
+			quitRoom();
+			break;
+		}
 	}
 }
 
@@ -623,6 +659,18 @@ void token()
 {
 	natb opcode = INC_TOKEN;
 	int ret = send(sd,&opcode,sizeof(opcode),0);
+}
+
+// funzioone lanciata dal client per ottenere lo start_time
+// del gioco
+void ottieniTempo()
+{
+	natb opcode = GET_TIME;
+	// invio il messaggio per ottenere lo start time
+	int ret = send(sd,&opcode,sizeof(opcode),0);
+
+	// ottengo lo start_time
+	ret = recv(sd,&gioco.start_time,sizeof(gioco.start_time),0);
 }
 
 #endif

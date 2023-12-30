@@ -33,6 +33,8 @@
 #define USE 0x04		// messaggio di use di uno o due oggetti
 #define UPDATE_TOKEN 0x05	// messaggio di update del numero dei token
 #define INC_TOKEN 0x06		// messaggio di incremento del numero di token
+#define GET_TIME 0x07		// messaggio per ottenere lo start time del gioco
+
 
 typedef uint8_t natb;
 typedef uint16_t natw;

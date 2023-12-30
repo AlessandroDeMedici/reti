@@ -32,7 +32,7 @@ struct oggetto
 	char descrizioneBloccato[256];
 	char enigma[256];
 	char risposta[64];
-	char status;
+	natb status;
 };
 
 struct location
@@ -54,6 +54,7 @@ struct player
 	int sd;
 	char username[50];
 	struct oggetto * inventario[INVENTARIO];
+	char p;
 };
 
 struct ricetta
@@ -68,6 +69,7 @@ struct game
 {
 	char status;
 	natb token;
+	time_t start_time;
 };
 
 
@@ -86,7 +88,9 @@ void objs(int sd);
 void game(int sd, natb opcode);
 void sbloccaPlayers();
 void getToken();
-
+void quitRoom();
+void startTime();
+void ottieniTempo();
 #else
 // metodi del client
 void initsd(int sockd);
@@ -108,6 +112,8 @@ void startRoomID(char * room);
 void game();
 void getToken();
 void token();
+void quitRoom();
+void ottieniTempo();
 #endif
 
 // metodi comuni

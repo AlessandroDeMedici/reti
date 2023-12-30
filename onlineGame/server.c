@@ -158,7 +158,6 @@ int main ()
 					}
 					// reinserisci sd in master
 					homeConnessione(sd);
-					ret = send(sd,&opcode,sizeof(opcode),0);
 					FD_SET(sd,&master);
 				}	
 			}

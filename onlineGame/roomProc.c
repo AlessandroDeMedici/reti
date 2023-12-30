@@ -72,7 +72,8 @@ int main(int argn, char * argv[])
 					max_fd = new_sd;
 				
 				// quando tutti i client si sono connessi li sblocco
-				sbloccaPlayers();
+				if (players == MAX_PLAYERS)
+					sbloccaPlayers();
 
 				FD_SET(new_sd,&master);
 			} else {
@@ -90,10 +91,7 @@ int main(int argn, char * argv[])
 				switch(opcode){
 					case (QUIT_ROOM):
 						// vieni rispedito al main server process
-						while(inviati < sizeof(i)){
-							ret = write(fp[1],&i,sizeof(i));		// inviato
-							inviati += ret;
-						}
+						write(fp[1],&i,sizeof(i));		// inviato
 						players--;
 						printf("(%d): %d è uscito dalla room, adesso ci sono %d players\n",id,i,players);
 						FD_CLR(i,&master);

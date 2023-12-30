@@ -37,7 +37,6 @@ void avviaRoom(int sd, char * arg1)
 {
 	natb opcode = START_ROOM;
 	natl room;
-	char buffer[256];
 	int ret;
 	// acquisisco il numero di room
 	sscanf(arg1,"%d",&room);
