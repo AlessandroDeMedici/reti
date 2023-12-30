@@ -1,23 +1,6 @@
-in pratica il client non ha altro che un interfaccia
-invia il comando e riceve una risposta
-potrei anche solo fare che invia stringhe e riceve stringhe se il traffico di dati lo permette
-
-devo modificare game in modo che funzioni con i players e non con giocatore
-spostare giocatori in game.c
-fare una funzione che aggiunge il player
-
-ricordati che i giocatori hanno visibilita solo sul proprio inventario e sugli oggetti globali
-quindi e' possibile fare una cache per comandi tipo objs
-
-INTUIZIONE:
-	L'UNICA COSA CHE VIENE MODIFICATA SONO GLI OGGETTI
-
-NEL FILE ROOM MANCANO DA AGGIORNARE DA USE IN POI
-VA MODIFICATO ROOM PROC IN MODO CHE ARRIVINO GLI OPCODE 
-VA FATTO UNO SWITCH SULL'OPCODE E VENGONO CHIAMATE LE FUNZIONI CORRETTE
-
-
-DEVO MODIFICARE IL CODICE IN MODO CHE LE FUNZIONI DI SERVER E CLIENT ABBIANO LO STESSO NOME,
-SEMPLICEMENTE VIENE FATTA UNA COMPILAZIONE CONDIZIONALE (DEFINISCO LA MACRO SERVER NEL SERVER)
-
+COSE DA FARE:
+	1. 	sistemare un bug che incorre quando un client lascia la 
+		partita prima che questa finisca (getPlayerId - player not found)
+	2. 	implementare un timer (il timer puo girare anche solo in locale dato che tutti i player iniziano insieme)
+		(opzionale). dare la possibilita ai player di partire in meno giocatori
 
