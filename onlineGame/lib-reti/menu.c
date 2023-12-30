@@ -1,6 +1,7 @@
 #include "menu.h"
 #include "costanti.h"
 #include <stdio.h>
+#include "utility.h"
 #include "game/game.h"
 
 // funzione che stampa il menu di login

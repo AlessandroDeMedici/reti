@@ -107,7 +107,7 @@ void objs();
 void startRoomID(char * room);
 void game();
 void getToken();
-
+void token();
 #endif
 
 // metodi comuni
@@ -121,4 +121,5 @@ void stampaLocation(struct location * l);
 void stampaOggetto(struct oggetto * o);
 void aggiungiRicetta(struct oggetto * o1, struct oggetto * o2, struct oggetto * dst, char action);
 void init();
+void token();
 #endif
