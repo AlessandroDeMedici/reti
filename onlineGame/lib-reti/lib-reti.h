@@ -5,6 +5,6 @@
 #include "menu.h"
 #include "room.h"
 #include "utility.h"
-#include "game.h"
+#include "game/game.h"
 
 

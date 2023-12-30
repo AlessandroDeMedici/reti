@@ -11,7 +11,7 @@
 
 int main () 
 {
-	int ret, sd, inviati = 0;
+	int ret, main, inviati = 0;
 	struct sockaddr_in server_addr; // per il server
 	char username[50];
 	char password[50];
@@ -23,9 +23,14 @@ int main ()
 	memset(username,0,50);
 	memset(password,0,50);
 	
+	// inizializzazione gioco
+	init();
 
 	/* Creazione socket */
-	sd = socket(AF_INET, SOCK_STREAM, 0);
+	main = socket(AF_INET, SOCK_STREAM, 0);
+	
+	initsd(main);
+
 
 	/* Creazione indirizzo del server */
 	memset(&server_addr, 0, sizeof(server_addr)); // Pulizia
@@ -34,50 +39,43 @@ int main ()
 	inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr);
 
 
-	ret = connect(sd, (struct sockaddr*)&server_addr, sizeof(server_addr));
+	ret = connect(main, (struct sockaddr*)&server_addr, sizeof(server_addr));
 	if (ret) ;
 
-	userLogin(sd,username,password);
+	// funzione per fare il login
+	userLogin(main,username,password);
 	
-	scanf("%d",&ret);
-	
-	//invio che voglio far parte della room 1
-	ret = 0;
-	opcode = START_ROOM;
-	while(!ret){
-		ret = send(sd,&opcode,sizeof(opcode),0);
+	// una volta fatto il login si entra nel main menu
+	printHome();
+	while (1){
+		char buffer[256];
+		char * command;
+		char * arg1;
+		fgets(buffer,255,stdin);
+		for (int i = 0; i < 256; i++)
+			if (buffer[i] == '\n'){
+				buffer[i] = '\0';
+				break;
+			}
+		command = strtok(buffer," ");
+		arg1 = strtok(NULL," ");
+		if (!command)
+			continue;
+		else if (!strcmp(command,"start")){ // avvia la room
+			if (!arg1){
+				printf("start - missing room id\n");
+				continue;
+			}
+			avviaRoom(main,arg1);
+			game();
+		} else if (strstr(command,"list")){
+			roomList(main);
+		} else if (strstr(command,"exit")) // esce
+			break;
 	}
 	
-	// invio il numero della room
-	inviati = 0;
-	room_id = htonl(room_id);
-	while (inviati < sizeof(room_id)){
-		ret = send(sd,&room_id + inviati,sizeof(room_id) - inviati,0);
-		inviati += ret;
-	}
-	
-	scanf("%d",&ret);
-	
-	// invio il messaggio di ok
-	ret = 0;
-	opcode = OK;
-	while(!ret){
-		ret = send(sd,&opcode,sizeof(opcode),0);
-	}
-
-	scanf("%d",&ret);
-
-	// voglio uscire dalla room
-	ret = 0;
-	opcode = QUIT_ROOM;
-	ret = send(sd,&opcode,sizeof(opcode),0);
-	while(!ret){
-		ret = send(sd,&opcode,sizeof(opcode),0);
-	}
-
-	scanf("%d",&ret);
-
-	close(sd);
+	close(main);
 	exit(0);
+	
 	return 0;
 }

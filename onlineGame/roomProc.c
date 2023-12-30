@@ -1,3 +1,4 @@
+#define SERVER
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/types.h>
@@ -7,10 +8,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-#include "./lib-reti/lib-reti.h"
+#include "lib-reti/lib-reti.h"
 
-
-int indice = 0;
 
 int main(int argn, char * argv[])
 {
@@ -31,6 +30,9 @@ int main(int argn, char * argv[])
 	int ret;
 
 	// controllo sugli input DA AGGIUNGERE
+
+	// inizializzazione room
+	init();
 
 	// acquisisco i file descriptors delle pipe
 	pf[0] = atoi(argv[1]);
@@ -58,15 +60,20 @@ int main(int argn, char * argv[])
 			if (i == pf[0]){
 				// e' arrivato un nuovo player
 				int new_sd, ricevuti = 0;
+				char username[50];
+				natb opcode = 250;
 				ret = read(i,&new_sd,sizeof(new_sd));		// ricevuto
 				ret = read(i,&len,sizeof(len));			// lunghezza username
-				ret = read(i,giocatori[indice].username,len);	// username
-				giocatori[indice].sd = new_sd;
+				ret = read(i,username,len);	// username
+				addPlayer(username,new_sd);
 				players++;
-				printf("(%d): %s è entrato a far parte della room, adesso ci sono %d players\n",id,giocatori[indice].username,players);
-				indice++;
+				printf("(%d): %s è entrato a far parte della room, adesso ci sono %d players\n",id,username,players);
 				if (new_sd > max_fd)
 					max_fd = new_sd;
+				
+				// quando tutti i client si sono connessi li sblocco
+				sbloccaPlayers();
+
 				FD_SET(new_sd,&master);
 			} else {
 				// devo servire la richiesta di un player
@@ -74,10 +81,7 @@ int main(int argn, char * argv[])
 				int inviati = 0;
 				int ricevuti = 0;
 				ret = 0;
-				while (ricevuti < sizeof(opcode)){
-					ret = recv(i,&opcode + ricevuti,sizeof(opcode) - ricevuti,0);
-					ricevuti += ret;
-				}
+				ret = recv(i,&opcode,sizeof(opcode),0);
 				// se il client ha chiuso la connessione questo viene
 				// notificato al main process ugualmente
 				if (!ret)
@@ -93,8 +97,6 @@ int main(int argn, char * argv[])
 						players--;
 						printf("(%d): %d è uscito dalla room, adesso ci sono %d players\n",id,i,players);
 						FD_CLR(i,&master);
-					
-					
 						// se non ci sono piu players
 						if (!players){
 							printf("(%d): chiusura della room...\n",id);
@@ -102,7 +104,7 @@ int main(int argn, char * argv[])
 						}
 						break;
 					default:
-						printf("(%d): %d mi ha inviato %d\n",id,i,opcode);
+						game(i,opcode);
 						break;
 				}
 			}

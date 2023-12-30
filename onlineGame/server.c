@@ -108,7 +108,6 @@ int main ()
 							stanza = checkRoom(room_id);
 							if (!stanza){
 								stanza = createRoom(room_id);
-
 								printf("La room non esisteva, l'ho creata\n");
 								// se e' stata creata bisogna inserire fd della pipe in master
 								FD_SET(stanza->fp[0],&master);
@@ -138,6 +137,7 @@ int main ()
 				} else {
 					// questo e' un fd relativo ad una pipe che ci sta inviando un socket indietro
 					int ricevuti = 0, sd = 0;
+					natb opcode;
 					stanza->status = QUITTING;
 					while(ricevuti < sizeof(sd)){
 						ret = read(i,&sd + ricevuti,sizeof(sd) - ricevuti);
@@ -158,6 +158,7 @@ int main ()
 					}
 					// reinserisci sd in master
 					homeConnessione(sd);
+					ret = send(sd,&opcode,sizeof(opcode),0);
 					FD_SET(sd,&master);
 				}	
 			}
