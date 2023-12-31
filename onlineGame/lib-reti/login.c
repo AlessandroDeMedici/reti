@@ -70,9 +70,9 @@ size_t loginUtente(int sd, char * username, char * password)
 	natl ret;
 	natb opcode = 0;
 	for (int i = 0; i < MAX_TENTATIVI; i++){
-		printf("Username: ");
+		printf("> Username: ");
 		scanf("%s",username);
-		printf("Password: ");
+		printf("> Password: ");
 		scanf("%s",password);
 		inviaLogin(sd,username,password);
 		// attendo la risposta del server
