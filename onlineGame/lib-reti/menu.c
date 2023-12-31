@@ -5,6 +5,7 @@
 #include "game/game.h"
 
 // funzione che stampa il menu di login
+// per il server o per il client
 void printUserMenu()
 {
 	printf("********** ESCAPE ROOM **********\n");
@@ -57,5 +58,7 @@ int avviaRoom(int sd, char * arg1)
 	} else
 		return 1;
 }
+
+
 
 

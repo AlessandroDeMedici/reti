@@ -7,7 +7,6 @@
 #include "user.h"
 #include "menu.h"
 
-
 // funzione che crea il pacchetto usato in fase di login e ritorna la dimensione del pacchetto in byte
  size_t makeStringaLogin(char * buffer, char * username, char * password)
 {
@@ -39,7 +38,6 @@ size_t inviaLogin(int sd,char * username, char * password)
 	int ret, sent = 0;
 	ret = send(sd,&len,sizeof(len),0);
 	// controllo su invio corretto (DA AGGIUNGERE)
-	if (!ret) ;
 	while (sent < len){
 		ret = send(sd,buffer + sent,len - sent,0);
 		sent += ret;
@@ -56,6 +54,10 @@ size_t riceviLogin(int sd, char * username, char * password)
 	ret = recv(sd,&len,sizeof(len),0);
 	while (received < len){
 		ret = recv(sd,buffer + received,len - received,0);
+		if (!ret){
+			return 1;
+		}
+
 		received += ret;
 	}
 	demakeStringaLogin(buffer,username,password);
@@ -75,7 +77,8 @@ size_t loginUtente(int sd, char * username, char * password)
 		inviaLogin(sd,username,password);
 		// attendo la risposta del server
 		ret = recv(sd,&opcode,sizeof(opcode),0);
-		if (!ret) ;
+		if (!ret) // il server ha chiuso la connessione
+			return 1;
 		if (opcode == OK){
 			// login completato
 			return 0;
@@ -97,11 +100,12 @@ struct user * loginServer(int sd,char * username, char * password)
 	natl ret;
 	struct user * utente = NULL;
 	for (int i = 0; i < MAX_TENTATIVI; i++){
-		riceviLogin(sd,username,password);
-		// controlla che sia affidabile
-		// INIZIO-ZONA-CRITICA
+		
+		if (riceviLogin(sd,username,password))
+			return NULL;
+		
+
 		utente = controllaUtente(username,password);
-		// FINE-ZONA-CRITICA
 		if (utente){ 	// utente loggato correttamente
 			opcode = OK;
 			ret = send(sd,&opcode,sizeof(opcode),0);
@@ -115,18 +119,20 @@ struct user * loginServer(int sd,char * username, char * password)
 	return NULL;
 } 
 
+
 // funzione che svolge la registrazione lato client
 size_t registerUtente(int sd, char * username, char * password)
 {	
 	printf("Username: ");
 	scanf("%s",username);
 	printf("Password: ");
-	scanf("%s",password);
+	scanf("%s",username);
 	natb opcode;
 	natl ret;
 	inviaLogin(sd,username,password);
 	ret = recv(sd,&opcode,sizeof(opcode),0);
-	if (!ret) ;
+	if (!ret) 
+		return 1;
 	if (opcode == OK){
 		// procedura di registrazione andata a buon fine
 		return 0;
@@ -140,7 +146,8 @@ struct user * registerServer(int sd, char * username, char * password)
 	natb opcode;
 	natl ret;
 	struct user * new_user;
-	riceviLogin(sd,username,password);
+	if (riceviLogin(sd,username,password))
+		return NULL;
 	new_user = nuovoUtente(username,password);
 	if (new_user){
 		opcode = OK;
@@ -148,7 +155,8 @@ struct user * registerServer(int sd, char * username, char * password)
 		opcode = NOK;
 	}
 	ret = send(sd,&opcode,sizeof(opcode),0);
-	if (!ret) ;
+	if (!ret) 
+		return NULL;
 	return new_user;
 }
 
@@ -157,29 +165,41 @@ size_t userLogin(int sd, char * username, char * password)
 {
 	natl ret = 0;
 	natb opcode = 0;
+	char buffer[64];
 	printUserMenu();	
 	while (1){
-		scanf("%c",&opcode);
-		if (opcode == '1'){
+		fgets(buffer,63,stdin);
+		for (int i = 0; i < 64; i++){
+			if (buffer[i] == '\n')
+				buffer[i] = '\0';
+		}
+
+		if (!strcmp(buffer,"login") || !strcmp(buffer,"log")){
 			// login branch
 			opcode = LOGIN;
 			break;
-		} else if (opcode == '0'){
+		} else if (!strcmp(buffer,"register") || !strcmp(buffer,"reg")){
 			// register branch
 			opcode = REGISTER;
 			break;
 		}
 	}
+
 	// invio quello che voglio fare al server
 	ret = send(sd,&opcode,sizeof(opcode),0);
+	
 	if (opcode == LOGIN){
 		ret = loginUtente(sd,username,password);
 		if (!ret)
 			printf("Login avvenuto correttamente\n");
+		else
+			return 1;
 	} else {
 		ret = registerUtente(sd,username,password);
 		if (!ret)
 			printf("Registrazione avvenuta correttamente\n");
+		else
+			return 1;
 	}
 	return 0;
 }
@@ -192,17 +212,23 @@ struct user * serverLogin(int sd, char * username, char * password)
 	natl ret;
 	// ricevo opcode dal client
 	ret = recv(sd,&opcode,sizeof(opcode),0);
-	if (!ret) ;
+	if (!ret){ // connessione chiusa
+		return NULL;
+	}
 	if (opcode == LOGIN){
 		// login branch
 		utente = loginServer(sd,username,password);
 		if (utente)
 			printf("%s:logged\n",username);
+		else
+			return NULL;
 	} else {
 		// register branch
 		utente = registerServer(sd,username,password);
 		if (utente){
 			printf("%s:registered\n",username);
+		} else {
+			return NULL;
 		}
 	}
 	return utente;

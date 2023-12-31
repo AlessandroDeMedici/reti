@@ -43,7 +43,10 @@ int main ()
 	if (ret) ;
 
 	// funzione per fare il login
-	userLogin(main,username,password);
+	if (userLogin(main,username,password)){
+		close(main);
+		exit(0);
+	}
 	
 	// una volta fatto il login si entra nel main menu
 	printHome();
