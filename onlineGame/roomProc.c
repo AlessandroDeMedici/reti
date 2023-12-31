@@ -54,62 +54,61 @@ int main(int argn, char * argv[])
 		printf("(%d): descrittori pronti: %d\n",id,ret);
 		if (ret == -1)
 			printf("errno: %d\n",errno);
-		for (int i = 0; i < max_fd + 1; i++){
-			if (!FD_ISSET(i,&read_fds))
-				continue;
-			if (i == pf[0]){
-				// e' arrivato un nuovo player
-				int new_sd, ricevuti = 0;
-				char username[50];
-				natb opcode = 250;
-				ret = read(i,&new_sd,sizeof(new_sd));		// ricevuto
-				ret = read(i,&len,sizeof(len));			// lunghezza username
-				ret = read(i,username,len);	// username
-				addPlayer(username,new_sd);
-				players++;
-				printf("(%d): %s è entrato a far parte della room, adesso ci sono %d players\n",id,username,players);
-				if (new_sd > max_fd)
-					max_fd = new_sd;
-				
-				// quando tutti i client si sono connessi li sblocco ed avvio il game
-				if (players == MAX_PLAYERS){
-					sbloccaPlayers();
-					startTime();
-				}
+		if (FD_ISSET(pf[0],&read_fds)){
+			// e' arrivato un nuovo player
+			int new_sd, ricevuti = 0;
+			char username[50];
+			natb opcode = 250;
+			ret = read(pf[0],&new_sd,sizeof(new_sd));		// ricevuto
+			ret = read(pf[0],&len,sizeof(len));			// lunghezza username
+			ret = read(pf[0],username,len);	// username
+			addPlayer(username,new_sd);
+			players++;
+			printf("(%d): %s è entrato a far parte della room, adesso ci sono %d players\n",id,username,players);
+			if (new_sd > max_fd)
+				max_fd = new_sd;
+			
+			// quando tutti i client si sono connessi li sblocco ed avvio il game
+			if (players == MAX_PLAYERS){
+				sbloccaPlayers();
+				startTime();
+			}
 
-				FD_SET(new_sd,&master);
-			} else {
+			FD_SET(new_sd,&master);
+		}
+		for (int i = 0; i < max_fd + 1; i++){
+			if (!FD_ISSET(i,&read_fds) || i == pf[0])
+				continue;
 				// devo servire la richiesta di un player
-				natb opcode = 0;
-				int inviati = 0;
-				int ricevuti = 0;
-				ret = 0;
-				ret = recv(i,&opcode,sizeof(opcode),0);
-				// se il client ha chiuso la connessione questo viene
-				// notificato al main process ugualmente
-				if (!ret)
-					opcode = QUIT_ROOM;
-				// switch sui possibili comandi
-				switch(opcode){
-					case (QUIT_ROOM):
-						// rilascio gli oggetti posseduti dal client
-						quitRoom(i);
-						
-						// vieni rispedito al main server process
-						write(fp[1],&i,sizeof(i));		// inviato
-						players--;
-						printf("(%d): %d è uscito dalla room, adesso ci sono %d players\n",id,i,players);
-						FD_CLR(i,&master);
-						// se non ci sono piu players
-						if (!players){
-							printf("(%d): chiusura della room...\n",id);
-							exit(0);
-						}
-						break;
-					default:
-						game(i,opcode);
-						break;
-				}
+			natb opcode = 0;
+			int inviati = 0;
+			int ricevuti = 0;
+			ret = 0;
+			ret = recv(i,&opcode,sizeof(opcode),0);
+			// se il client ha chiuso la connessione questo viene
+			// notificato al main process ugualmente
+			if (!ret)
+				opcode = QUIT_ROOM;
+			// switch sui possibili comandi
+			switch(opcode){
+				case (QUIT_ROOM):
+					// rilascio gli oggetti posseduti dal client
+					quitRoom(i);
+					
+					// vieni rispedito al main server process
+					write(fp[1],&i,sizeof(i));		// inviato
+					players--;
+					printf("(%d): %d è uscito dalla room, adesso ci sono %d players\n",id,i,players);
+					FD_CLR(i,&master);
+					// se non ci sono piu players
+					if (!players){
+						printf("(%d): chiusura della room...\n",id);
+						exit(0);
+					}
+					break;
+				default:
+					game(i,opcode);
+					break;
 			}
 		}
 	}

@@ -21,7 +21,7 @@ void printHome()
 	printf("Comandi:\n");
 	printf("start [room]: avvia la room con ID [room]\n");
 	printf("list: controlla tutte le rooma attive\n");
-	printf("exit: esci e chiudi la connessione\n");
+	printf("end: esci e chiudi la connessione\n");
 	printf("*********************************\n");
 	printf("> ");
 }
