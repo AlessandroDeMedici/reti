@@ -6,6 +6,8 @@
 // costanti
 #define MAX_PLAYERS 2		// numero massimo di giocatori per room
 #define MAX_TENTATIVI 3		// numero massimo di tentativi per fare login
+#define MINUTES 10		// numero di minuti entro i quali finire il gioco
+
 
 // status del giocatore
 #define NOT_LOGGED 0x00		// satus del giocatore che non ha fatto login (gestito dal main)

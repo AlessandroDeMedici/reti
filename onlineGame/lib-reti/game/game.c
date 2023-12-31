@@ -251,9 +251,20 @@ void ottieniTempo(int sd)
 {
 	time_t start_time = gioco.start_time;
 	int ret;
+	
 	start_time = htonl(start_time);
 	
 	ret = send(sd,&start_time,sizeof(start_time),0);
+}
+
+void quitRoom(int sd)
+{
+	natb id = getPlayerId(sd);
+
+	for (int i = 0; i < INVENTARIO; i++){
+		if (giocatori[id].inventario[i])
+			giocatori[id].inventario[i]->status = FREE;
+	}
 }
 
 #else
@@ -357,8 +368,12 @@ void look(char * c)
 
 	// devo cercare l'oggetto fra tutti gli oggetti
 	o = findOggetto(c);
-	if (o)
-		aggiornaOggetto(o);
+	if (!o){
+		printf("look - no object found\n");
+		return;
+	}
+	
+	aggiornaOggetto(o);
 
 	// se l'oggetto e' HIDDEN l'oggetto non viene trovato
 	if (o->status == HIDDEN)
@@ -369,7 +384,7 @@ void look(char * c)
 		return;
 	}
 
-	printf("look - bad argument\n");
+	printf("look - no object found\n");
 
 }
 
@@ -602,6 +617,17 @@ void game()
 
 		fgets(buffer,127,stdin);
 
+
+		// prima di eseguire il comando controllo
+		// il tempo
+		// controllo sul tempo (perso)
+		if (controllaTempo()){
+			lose();
+			quitRoom();
+			break;
+		}
+
+
 		for (int i =0; i < 128; i++){
 			if (buffer[i] == '\n'){
 				buffer[i] = '\0';
@@ -613,7 +639,7 @@ void game()
 		arg2 = strtok(NULL," ");
 		if (!command)
 			continue;
-		else if (!strcmp(command,"end")){
+		else if (!strcmp(command,"exit")){
 			quitRoom();
 			break;
 		}
@@ -632,17 +658,38 @@ void game()
 		else if (!strcmp(command,"start")){
 			startRoomID(arg1);
 		}
-		else
-			;
-		// aggiorna i token presenti
+		else if (!strcmp(command,"time")){
+			stampaTempo();
+		}
+		else 
+			// cancella
+			printf("\033[A\r\033[K");
+
+		// controllo sui token (vinto)
 		getToken();
-		
 		if (gioco.token == MAX_TOKEN){
 			win();
 			quitRoom();
 			break;
 		}
+
 	}
+}
+
+void lose()
+{
+	printf("Tempo scaduto, hai perso!\n");
+}
+
+void stampaTempo()
+{
+	time_t current_time;
+	int remaining;
+	time(&current_time);
+	remaining = MINUTES * 60 - difftime(current_time,gioco.start_time);
+	if (remaining <= 0)
+		printf("Tempo rimanente: 00:00\n");
+	printf("Tempo rimanente: %02d:%02d\n",remaining/60,remaining%60);
 }
 
 // funzione lanciata dal client per ottenere il numero aggiornato di token
@@ -661,7 +708,7 @@ void token()
 	int ret = send(sd,&opcode,sizeof(opcode),0);
 }
 
-// funzioone lanciata dal client per ottenere lo start_time
+// funzione lanciata dal client per ottenere lo start_time
 // del gioco
 void ottieniTempo()
 {
@@ -671,6 +718,9 @@ void ottieniTempo()
 
 	// ottengo lo start_time
 	ret = recv(sd,&gioco.start_time,sizeof(gioco.start_time),0);
+	
+	// lo converto nel formato giusto
+	gioco.start_time = ntohl(gioco.start_time);
 }
 
 #endif
@@ -769,6 +819,16 @@ void aggiungiRicetta(struct oggetto * o1, struct oggetto * o2, struct oggetto * 
 	}
 }
 
+int controllaTempo()
+{
+	time_t current_time;
+	int remaining;
+	time(&current_time);
+	remaining = MINUTES * 60 - difftime(current_time,gioco.start_time);
+	if (remaining <= 0)
+		return 1;
+	return 0;
+}
 
 // funzione per inizializzare la prima room
 void init()

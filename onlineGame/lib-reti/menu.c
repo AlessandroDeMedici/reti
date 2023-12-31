@@ -19,7 +19,7 @@ void printHome()
 	printf("Comandi:\n");
 	printf("start [room]: avvia la room con ID [room]\n");
 	printf("list: controlla tutte le rooma attive\n");
-	printf("exit: esci e chiudi la connessione\n");
+	printf("end: esci e chiudi la connessione\n");
 	printf("*********************************\n");
 }
 
@@ -33,7 +33,7 @@ void roomList(int sd)
 	printf("LISTA DELLE ROOMS:\n%s",buffer);
 }
 
-void avviaRoom(int sd, char * arg1)
+int avviaRoom(int sd, char * arg1)
 {
 	natb opcode = START_ROOM;
 	natl room;
@@ -49,10 +49,13 @@ void avviaRoom(int sd, char * arg1)
 	ret = send(sd,&room,sizeof(room),0);
 
 	// attendo il messaggio di OK
-	printf("In attesa che tutti i giocatori entrino nella room...\n");
+	printf("In attesa di entrare nella room %d...\n",htonl(room));
 	ret = recv(sd,&opcode,sizeof(opcode),0);
-
-	printf("Benvenuto nella room!\n");
+	if (opcode == OK){
+		printf("Benvenuto nella room!\n");
+		return 0;
+	} else
+		return 1;
 }
 
 

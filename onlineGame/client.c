@@ -66,11 +66,15 @@ int main ()
 				printf("start - missing room id\n");
 				continue;
 			}
-			avviaRoom(main,arg1);
-			game();
+			if (!avviaRoom(main,arg1))
+				game();
+			else {
+				printf("Room piena o gia' avviata\n");
+				continue;
+			}
 		} else if (strstr(command,"list")){
 			roomList(main);
-		} else if (strstr(command,"exit")) // esce
+		} else if (strstr(command,"end")) // chiude la connessione con il server
 			break;
 	}
 	

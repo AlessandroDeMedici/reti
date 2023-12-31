@@ -71,9 +71,11 @@ int main(int argn, char * argv[])
 				if (new_sd > max_fd)
 					max_fd = new_sd;
 				
-				// quando tutti i client si sono connessi li sblocco
-				if (players == MAX_PLAYERS)
+				// quando tutti i client si sono connessi li sblocco ed avvio il game
+				if (players == MAX_PLAYERS){
 					sbloccaPlayers();
+					startTime();
+				}
 
 				FD_SET(new_sd,&master);
 			} else {
@@ -90,6 +92,9 @@ int main(int argn, char * argv[])
 				// switch sui possibili comandi
 				switch(opcode){
 					case (QUIT_ROOM):
+						// rilascio gli oggetti posseduti dal client
+						quitRoom(i);
+						
 						// vieni rispedito al main server process
 						write(fp[1],&i,sizeof(i));		// inviato
 						players--;

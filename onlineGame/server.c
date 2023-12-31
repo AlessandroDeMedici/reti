@@ -85,6 +85,7 @@ int main ()
 				struct des_room * stanza = getRoom(i);
 				if (!stanza){
 					natl room_id = 0;
+					natb opcode = NOK;
 					struct des_connection * conn = 0;
 					// questo e' un socket che ci sta inviando un messaggio
 					ret = recv(i,&opcode,sizeof(opcode),0);
@@ -123,6 +124,8 @@ int main ()
 								FD_CLR(i,&master);	
 							} else { // la room era piena
 								printf("%d non e' entrato nella room %d perche era piena\n",i,room_id);
+								// invia un NOK
+								ret = send(i,&opcode,sizeof(opcode),0);
 							}
 							break;
 						case(ROOM_LIST):
