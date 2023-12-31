@@ -50,20 +50,27 @@ int main ()
 	
 	// una volta fatto il login si entra nel main menu
 	printHome();
+
 	while (1){
 		char buffer[256];
 		char * command;
 		char * arg1;
+		
+		printf("> ");
 		fgets(buffer,255,stdin);
 		for (int i = 0; i < 256; i++)
 			if (buffer[i] == '\n'){
 				buffer[i] = '\0';
 				break;
 			}
+		
 		command = strtok(buffer," ");
 		arg1 = strtok(NULL," ");
-		if (!command)
+
+		if (!command){
+			printf("\r\033[K");
 			continue;
+		}
 		else if (!strcmp(command,"start")){ // avvia la room
 			if (!arg1){
 				printf("start - missing room id\n");
@@ -79,6 +86,8 @@ int main ()
 			roomList(main);
 		} else if (strstr(command,"end")) // chiude la connessione con il server
 			break;
+		else
+			printf("\033[A\r\033[K");
 	}
 	
 	close(main);

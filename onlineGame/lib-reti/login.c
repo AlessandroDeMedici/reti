@@ -119,7 +119,6 @@ struct user * loginServer(int sd,char * username, char * password)
 	return NULL;
 } 
 
-
 // funzione che svolge la registrazione lato client
 size_t registerUtente(int sd, char * username, char * password)
 {	
@@ -160,7 +159,6 @@ struct user * registerServer(int sd, char * username, char * password)
 	return new_user;
 }
 
-
 size_t userLogin(int sd, char * username, char * password)
 {
 	natl ret = 0;
@@ -182,7 +180,8 @@ size_t userLogin(int sd, char * username, char * password)
 			// register branch
 			opcode = REGISTER;
 			break;
-		}
+		} else
+			printf("\033[A\r\033[K> ");
 	}
 
 	// invio quello che voglio fare al server
@@ -203,7 +202,6 @@ size_t userLogin(int sd, char * username, char * password)
 	}
 	return 0;
 }
-
 
 struct user * serverLogin(int sd, char * username, char * password)
 {

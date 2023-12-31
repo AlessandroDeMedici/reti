@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "../utility.h"
 
 struct room stanza;	// struttura globale room
 struct game gioco;	// struttura globale oggetti
@@ -295,7 +296,6 @@ void aggiornaOggetto(struct oggetto * o)
 	ret = recv(sd,&o->status,sizeof(status),0);
 	if (!ret) // disconnessione
 		printf("aggiornaOggetto - server disconnesso\n");
-	printf("Ho ricevuto dal server lo status dell'oggetto %s (%02X)\n",o->nome,o->status);
 } 
 
 // funzione che notifica il server che l'oggetto o e' stato 
@@ -610,11 +610,12 @@ void game()
 	gioco.status = STARTED;
 	gioco.token = 0;
 	ottieniTempo();
-	printf("game inizializzato\n");
+
+	printHelp();
 
 	while(1){
+		
 		printf("> ");
-
 		fgets(buffer,127,stdin);
 
 
@@ -634,11 +635,15 @@ void game()
 				break;
 			}
 		}
+		
 		command = strtok(buffer," ");
 		arg1 = strtok(NULL," ");
 		arg2 = strtok(NULL," ");
-		if (!command)
+	
+		if (!command){
+			printf("\033[A\r\033[K");
 			continue;
+		}
 		else if (!strcmp(command,"exit")){
 			quitRoom();
 			break;
@@ -662,7 +667,6 @@ void game()
 			stampaTempo();
 		}
 		else 
-			// cancella
 			printf("\033[A\r\033[K");
 
 		// controllo sui token (vinto)
@@ -780,29 +784,39 @@ struct ricetta * findRicetta(struct oggetto * o1, struct oggetto * o2)
 // funzione per stampare la descrizione della room
 void stampaRoom()
 {
-	printf("%s\n",stanza.descrizione);
+	char buffer[512];
+	sprintf(buffer,"%s\n",stanza.descrizione);
+	stampaAnimata(buffer);
 }
 
 // funzione per stampare la descrizione della location l
 void stampaLocation(struct location * l)
 {
-	printf("%s\n",l->descrizione);
-}
+	char buffer[512];
+	sprintf(buffer,"%s\n",l->descrizione);
+	stampaAnimata(buffer);
+} 
 
 // funzione per stampare la descrizione dell'oggetto o
 void stampaOggetto(struct oggetto * o)
 {
+	char buffer[512];
 	// devo controllare se l'oggetto e' bloccato
 	if (o->status == BLOCCATO){
-		printf("%s\n",o->descrizioneBloccato);
+		sprintf(buffer,"%s\n",o->descrizioneBloccato);
+		stampaAnimata(buffer);
 	} else {
-		printf("%s\n",o->descrizione);
+		sprintf(buffer,"%s\n",o->descrizione);
+		stampaAnimata(buffer);
 	}
-}
+} 
 
 void win()
 {
+	char temp;
 	printf("Hai vinto!\n");
+	printf("Premi invio per continuare per continuare...\n");
+	temp = getchar();
 }
 
 // funzione per aggiungere una ricetta
@@ -898,6 +912,8 @@ void init()
 	// INIZIALIZZAZIONE RICETTE
 	// se uso la bottiglia posso raccogliere il biglietto
 	aggiungiRicetta(&oggetti[2],NULL,&oggetti[3],GIVE);
+	// se uso la cassaforte ottengo la chiave
 	aggiungiRicetta(&oggetti[1],NULL,&oggetti[4],GIVE);
+	// se uso la chiave ottengo un token
 	aggiungiRicetta(&oggetti[4],NULL,NULL,TOKEN);
 }

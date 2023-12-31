@@ -5,5 +5,6 @@
 
 size_t sendString(int,char*);
 size_t receiveString(int,char*);
+void stampaAnimata(char * buffer);
 
 #endif

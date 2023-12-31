@@ -27,5 +27,12 @@ size_t receiveString(int sd, char * string)
 	return 0;
 }
 
-
+void stampaAnimata(char * buffer)
+{
+	for (int i = 0; buffer[i] != '\0'; i++){
+		printf("%c",buffer[i]);
+		fflush(stdout);
+		usleep(10000);
+	}
+}
 

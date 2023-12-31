@@ -10,7 +10,7 @@ void printUserMenu()
 {
 	printf("********** ESCAPE ROOM **********\n");
 	printf("Benvenuto sul server\n");
-	printf("Login: 1\nRegister: 0\n");
+	printf("login: fai login\nregister: registati\n");
 	printf("*********************************\n");
 	printf("> ");
 }
@@ -23,7 +23,6 @@ void printHome()
 	printf("list: controlla tutte le rooma attive\n");
 	printf("end: esci e chiudi la connessione\n");
 	printf("*********************************\n");
-	printf("> ");
 }
 
 void roomList(int sd)
@@ -52,7 +51,7 @@ int avviaRoom(int sd, char * arg1)
 	ret = send(sd,&room,sizeof(room),0);
 
 	// attendo il messaggio di OK
-	printf("In attesa di entrare nella room %d...\n",htonl(room));
+	printf("In attesa che gli altri giocatori entrino nella room %d...\n",htonl(room));
 	ret = recv(sd,&opcode,sizeof(opcode),0);
 	if (opcode == OK){
 		printf("Benvenuto nella room!\n");
@@ -61,6 +60,16 @@ int avviaRoom(int sd, char * arg1)
 		return 1;
 }
 
+void printHelp()
+{
+	printf("******************* Buona partita ******************\n");
+	printf("Comandi:\nlook [oggetto|location]\t\tstampa la descrizione di un oggetto o location\n");
+	printf("take [oggetto]\t\t\tsblocca o ottieni un oggetto\n");
+	printf("use [oggetto1] [oggetto2]\tusa un oggetto\n");
+	printf("time\t\t\t\tottieni il tempo rimanente\n");
+	printf("exit\t\t\t\tesci dal gioco\n");
+	printf("****************************************************\n");
+}
 
 
 
