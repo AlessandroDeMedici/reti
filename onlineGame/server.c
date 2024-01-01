@@ -77,7 +77,6 @@ int main ()
 				}
 			} else {
 				// un file descriptor e' pronto
-				natb opcode = 0;
 				int ret = 0;
 				// se questo file descriptor e' associato ad una pipe allora una room
 				// ci sta inviando un messaggio
@@ -140,7 +139,6 @@ int main ()
 				} else {
 					// questo e' un fd relativo ad una pipe che ci sta inviando un socket indietro
 					int ricevuti = 0, sd = 0;
-					natb opcode;
 					stanza->status = QUITTING;
 					while(ricevuti < sizeof(sd)){
 						ret = read(i,&sd + ricevuti,sizeof(sd) - ricevuti);

@@ -11,15 +11,11 @@
 
 int main () 
 {
-	int ret, main, inviati = 0;
+	int ret, main;
 	struct sockaddr_in server_addr; // per il server
 	char username[50];
 	char password[50];
-	natb opcode = 0;
-	natl room_id;
 	srand(time(NULL));
-	room_id = rand()%5;
-	//room_id = 1024;
 	memset(username,0,50);
 	memset(password,0,50);
 	

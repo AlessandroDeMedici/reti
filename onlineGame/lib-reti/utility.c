@@ -3,6 +3,7 @@
 #include <arpa/inet.h>
 #include "costanti.h"
 #include <stdio.h>
+#include <unistd.h>
 
 size_t sendString(int sd, char * string)
 { 

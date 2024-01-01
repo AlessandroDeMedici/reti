@@ -31,13 +31,12 @@ void addPlayer(char * username, int sd)
 void aggiornaOggetto(int sd)
 {
 	natb id = 0;
-	int ret = 0;
 	struct oggetto * o;
 	// ricevo id dell'oggetto
-	ret = recv(sd,&id,sizeof(id),0);
+	recv(sd,&id,sizeof(id),0);
 	o = &oggetti[id];
 	// invia lo status aggiornato dell'oggetto
-	ret = send(sd,&o->status,sizeof(o->status), 0);
+	send(sd,&o->status,sizeof(o->status), 0);
 
 	printf("Invio al client %d lo status dell'oggetto %s (%d)\n",sd,o->nome,o->status);
 }
@@ -47,9 +46,8 @@ void sbloccaOggetto(int sd)
 {
 	natb id = 0;
 	struct oggetto * o = NULL;
-	int ret;
 	// ricevo id
-	ret = recv(sd,&id,sizeof(id),0);
+	recv(sd,&id,sizeof(id),0);
 	// sblocco l'oggetto
 	o = &oggetti[id];
 	o->status = FREE;
@@ -63,7 +61,7 @@ void ottieniOggetto(int sd)
 	// devo ottenere l'indice del player
 	natb pid = getPlayerId(sd);
 
-	int ret = recv(sd,&id,sizeof(id),0);
+	recv(sd,&id,sizeof(id),0);
 
 	struct oggetto * o = &oggetti[id];
 
@@ -134,15 +132,14 @@ size_t aggiungiInventario(natb id,struct oggetto * o)
 void usaOggetto(int sd)
 {
 	natb id1, id2 = 0xFF, pid;
-	int ret;
 	struct ricetta * r = NULL;
 	struct oggetto * o1, * o2 = NULL;
 	// ricevo gli oggetti
-	ret = recv(sd,&id1,sizeof(id1),0);
-	ret = recv(sd,&id2,sizeof(id2),0);
+	recv(sd,&id1,sizeof(id1),0);
+	recv(sd,&id2,sizeof(id2),0);
 	
 	o1 = &oggetti[id1];
-	if (o2 != 0xFF)
+	if (id2 != 0xFF)
 		o2 = &oggetti[id2];
 
 	// ottengo il player id
@@ -220,17 +217,16 @@ void game(int sd, natb opcode)
 void sbloccaPlayers()
 {
 	natb opcode = 250;
-	int ret;
 	for (int i = 0; i < MAX_PLAYERS; i++)
 		if (giocatori[i].p)
-			ret = send(giocatori[i].sd,&opcode,sizeof(opcode),0);
+			send(giocatori[i].sd,&opcode,sizeof(opcode),0);
 }
 
 // funzione lanciata dal server per inviare il numero
 // di token attuali
 void getToken(int sd)
 {
-	int ret = send(sd,&gioco.token,sizeof(gioco.token),0);
+	send(sd,&gioco.token,sizeof(gioco.token),0);
 }
 
 // funzione lanciata dal server per incrementare il numero
@@ -251,11 +247,10 @@ void startTime()
 void ottieniTempo(int sd)
 {
 	time_t start_time = gioco.start_time;
-	int ret;
 	
 	start_time = htonl(start_time);
 	
-	ret = send(sd,&start_time,sizeof(start_time),0);
+	send(sd,&start_time,sizeof(start_time),0);
 }
 
 void quitRoom(int sd)
@@ -304,12 +299,11 @@ void sbloccaOggetto(struct oggetto * o)
 {
 	natb id = getObjectId(o);
 	natb opcode = UNLOCK;
-	int ret;
 
 	// invio opcode
-	ret = send(sd,&opcode,sizeof(opcode),0);
+	send(sd,&opcode,sizeof(opcode),0);
 	// invio id
-	ret = send(sd,&id,sizeof(id),0);
+	send(sd,&id,sizeof(id),0);
 }
 
 // notifica al server di aver preso l'oggetto di id id
@@ -317,12 +311,11 @@ void ottieniOggetto(struct oggetto * o)
 {
 	natb id = getObjectId(o);
 	natb opcode = TAKE;
-	int ret;
 
 	// invio opcode
-	ret = send(sd,&opcode,sizeof(opcode),0);
+	send(sd,&opcode,sizeof(opcode),0);
 	// invio id
-	ret = send(sd,&id,sizeof(id),0);
+	send(sd,&id,sizeof(id),0);
 }
 
 // trova nell'inventario del player l'oggetto di nome c
@@ -496,17 +489,16 @@ size_t aggiungiInventario(struct oggetto * o)
 void usaOggetto(struct oggetto * o1, struct oggetto * o2)
 {
 	natb id1, id2 = 0xFF, opcode = TAKE;
-	int ret;
 	id1 = getObjectId(o1);
 	if (o2)
 		id2 = getObjectId(o2);
 
 	// invio opcode
-	ret = send(sd,&opcode,sizeof(opcode),0);
+	send(sd,&opcode,sizeof(opcode),0);
 
 	// invio oggetti
-	ret = send(sd,&id1,sizeof(id1),0);
-	ret = send(sd,&id2,sizeof(id2),0);
+	send(sd,&id1,sizeof(id1),0);
+	send(sd,&id2,sizeof(id2),0);
 }
 
 void use(char * obj1, char * obj2)
@@ -576,22 +568,22 @@ void objs()
 
 void startRoomID(char * room)
 {
-	int rid, ret;
+	int rid;
 	natb opcode = START_ROOM;
 	sscanf(room,"%d",&rid);
 	rid = htonl(rid);
 	
 	// invio opcode
-	ret = send(sd,&opcode,sizeof(opcode),0);
+	send(sd,&opcode,sizeof(opcode),0);
 
 	// invio room id
-	ret = send(sd,&rid,sizeof(rid),0);
+	send(sd,&rid,sizeof(rid),0);
 }
 
 void quitRoom()
 {
 	natb opcode = QUIT_ROOM;
-	int ret = send(sd,&opcode,sizeof(opcode),0);
+	send(sd,&opcode,sizeof(opcode),0);
 	
 	printf("Sto tornando alla home...\n");
 	printHome();
@@ -700,16 +692,15 @@ void stampaTempo()
 void getToken()
 {
 	natb opcode = UPDATE_TOKEN;
-	int ret = send(sd,&opcode,sizeof(opcode),0);
-
-	ret = recv(sd,&gioco.token,sizeof(gioco.token),0);
+	send(sd,&opcode,sizeof(opcode),0);
+	recv(sd,&gioco.token,sizeof(gioco.token),0);
 }
 
 // funzione lanciata dal client per incrementare il numero di token del game
 void token()
 {
 	natb opcode = INC_TOKEN;
-	int ret = send(sd,&opcode,sizeof(opcode),0);
+	send(sd,&opcode,sizeof(opcode),0);
 }
 
 // funzione lanciata dal client per ottenere lo start_time
@@ -718,10 +709,10 @@ void ottieniTempo()
 {
 	natb opcode = GET_TIME;
 	// invio il messaggio per ottenere lo start time
-	int ret = send(sd,&opcode,sizeof(opcode),0);
+	send(sd,&opcode,sizeof(opcode),0);
 
 	// ottengo lo start_time
-	ret = recv(sd,&gioco.start_time,sizeof(gioco.start_time),0);
+	recv(sd,&gioco.start_time,sizeof(gioco.start_time),0);
 	
 	// lo converto nel formato giusto
 	gioco.start_time = ntohl(gioco.start_time);
@@ -813,10 +804,9 @@ void stampaOggetto(struct oggetto * o)
 
 void win()
 {
-	char temp;
 	printf("Hai vinto!\n");
 	printf("Premi invio per continuare per continuare...\n");
-	temp = getchar();
+	getchar();
 }
 
 // funzione per aggiungere una ricetta

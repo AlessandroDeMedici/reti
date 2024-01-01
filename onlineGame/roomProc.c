@@ -56,9 +56,8 @@ int main(int argn, char * argv[])
 			printf("errno: %d\n",errno);
 		if (FD_ISSET(pf[0],&read_fds)){
 			// e' arrivato un nuovo player
-			int new_sd, ricevuti = 0;
+			int new_sd;
 			char username[50];
-			natb opcode = 250;
 			ret = read(pf[0],&new_sd,sizeof(new_sd));		// ricevuto
 			ret = read(pf[0],&len,sizeof(len));			// lunghezza username
 			ret = read(pf[0],username,len);	// username
@@ -81,8 +80,6 @@ int main(int argn, char * argv[])
 				continue;
 				// devo servire la richiesta di un player
 			natb opcode = 0;
-			int inviati = 0;
-			int ricevuti = 0;
 			ret = 0;
 			ret = recv(i,&opcode,sizeof(opcode),0);
 			// se il client ha chiuso la connessione questo viene

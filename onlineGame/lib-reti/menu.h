@@ -5,5 +5,6 @@ void printUserMenu();
 void roomList(int sd);
 void printHome();
 int avviaRoom(int sd,char * arg1);
+void printHelp();
 
 #endif

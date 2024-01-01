@@ -29,8 +29,7 @@ void roomList(int sd)
 {
 	natb opcode = ROOM_LIST;
 	char buffer[256];
-	int ret;
-	ret = send(sd,&opcode,sizeof(opcode),0);
+	send(sd,&opcode,sizeof(opcode),0);
 	receiveString(sd,buffer);
 	printf("LISTA DELLE ROOMS:\n%s",buffer);
 }
@@ -39,20 +38,19 @@ int avviaRoom(int sd, char * arg1)
 {
 	natb opcode = START_ROOM;
 	natl room;
-	int ret;
 	// acquisisco il numero di room
 	sscanf(arg1,"%d",&room);
 
 	// invio il messaggio di START_ROOM
-	ret = send(sd,&opcode,sizeof(opcode),0);
+	send(sd,&opcode,sizeof(opcode),0);
 
 	// invio il numero di room
 	room = htonl(room);
-	ret = send(sd,&room,sizeof(room),0);
+	send(sd,&room,sizeof(room),0);
 
 	// attendo il messaggio di OK
 	printf("In attesa che gli altri giocatori entrino nella room %d...\n",htonl(room));
-	ret = recv(sd,&opcode,sizeof(opcode),0);
+	recv(sd,&opcode,sizeof(opcode),0);
 	if (opcode == OK){
 		printf("Benvenuto nella room!\n");
 		return 0;
