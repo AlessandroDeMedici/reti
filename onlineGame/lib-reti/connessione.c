@@ -1,25 +1,9 @@
 // connessione.c
 #include "connessione.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include "login.h"
 
 
 // lista delle connessioni attualmente attive
 struct des_connection * connessioni = 0;
-
-// chiave di sessione
-natl KEY_SEED = 0;
-
-natl generaChiaveSessione()
-{
-	return KEY_SEED++;
-}
-
-natl getChiaveSessione()
-{
-	return KEY_SEED;
-}
 
 // funzione che aggiunge una nuova connessione
 struct des_connection * nuovaConnessione(int sd)
@@ -27,18 +11,16 @@ struct des_connection * nuovaConnessione(int sd)
 	struct des_connection * new_conn = (struct des_connection *)malloc(sizeof(struct des_connection));
 	// eventuale gestione dell'errore
 	if (!new_conn){
-		;
+		return NULL;
 	}
 	
 	// inizializzazione della nuova struttura
 	new_conn->next = 0;
 	new_conn->sd = sd;
 	new_conn->status = NOT_LOGGED;
-	new_conn->chiave = generaChiaveSessione();
 	new_conn->utente = 0;
 
-	// inserimento in fondo
-	// INIZIO-ZONA-CRITICA
+	// inserimento in fondo alla lista
 	struct des_connection * p = connessioni;
 	struct des_connection * q = 0;
 	while(p){
@@ -51,7 +33,7 @@ struct des_connection * nuovaConnessione(int sd)
 	} else {
 		q->next = new_conn;
 	}
-	printf("Connessione aperta\n");
+	printf("(Main) Connessione aperta con il socket %d\n",sd);
 	return new_conn;
 }
 
@@ -72,6 +54,7 @@ struct des_connection * getConnessione(int sd)
 // funzione che chiude la connessione dato il socket
 size_t chiudiConnessione(int sd)
 {
+	// elimino un elemento dalla lista con la tecnica dei due puntatori
 	struct des_connection * p = connessioni;
 	struct des_connection * q = 0;
 	while (p){
@@ -86,7 +69,7 @@ size_t chiudiConnessione(int sd)
 		p = p->next;
 	}
 	free(p);
-	printf("Connessione chiusa\n");
+	printf("(Main) Connessione chiusa con il socket %d\n",sd);
 	return 0;
  }
 
@@ -132,5 +115,10 @@ size_t logoutConnessione(int sd)
 	return 0;
 }
 
-
+size_t nessunaConnessione()
+{
+	if (!connessioni)
+		return 1;
+	return 0;
+}
 

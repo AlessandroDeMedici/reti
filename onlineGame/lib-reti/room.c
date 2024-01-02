@@ -1,7 +1,4 @@
 #include "room.h"
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 
 // lista di rooms;
 struct des_room * room = 0;
@@ -225,8 +222,7 @@ size_t activeRooms(char * buffer)
 	struct des_room * p = room;
 	int len;
 	if (!p){
-		sprintf(buffer,"No active rooms\n");
-		return 0;
+		return 1;
 	}
 	while(p){
 		sprintf(buffer,"Room %d\tnumPlayers:%d/%d\n",p->id,p->numPlayers,MAX_PLAYERS);
@@ -237,8 +233,71 @@ size_t activeRooms(char * buffer)
 	buffer[len] = '\0';
 	return 0;
 }
+#ifdef SERVER
+void avviaRoom(int sd, int max_sd, fd_set * master, struct des_room * stanza)
+{
+	struct des_connection * conn = NULL;
+	int ret = 0;
+	natl room_id = 0;
+	natb opcode = NOK;
+	// ottengo il descrittore di connessione
+	conn = getConnessione(sd);
 
+	// ricevo il room_id
+	ret = recv(sd,&room_id,sizeof(room_id),0);
+	room_id = ntohl(room_id);
+	printf("(Main) (%d) vuole entrare nella room (%d)\n",sd,room_id);
+	// entro nella room, se questa non esiste prima la creo
+	stanza = checkRoom(room_id);
 
+	if (!stanza){
+		stanza = createRoom(room_id);
+		printf("(Main) La room %d non esisteva, e' stata creata\n",room_id);
+		// se e' stata creata bisogna inserire fd della pipe in master
+		FD_SET(stanza->fp[0],master);
+		if (stanza->fp[0] > max_sd)
+			max_sd = stanza->fp[0];
+	} else {
+		printf("(Main) La room %d esisteva\n",room_id);
+	}
+	ret = joinRoom(sd,conn->utente,stanza);
+	if (!ret){
+		playingConnessione(sd);
+		printf("(Main) il socket (%d) e' entrato nella room (%d)\n",sd,room_id);
+		FD_CLR(sd,master);	
+	} else { // la room era piena
+		printf("(Main) il socket (%d) non e' entrato nella room %d perche era piena\n",sd,room_id);
+		// invia un NOK
+		ret = send(sd,&opcode,sizeof(opcode),0);
+	}
+}
 
+void tornaIndietro(int sd, fd_set * master, struct des_room * stanza)
+{
+	// questo e' un fd relativo ad una pipe che ci sta inviando un socket indietro
+	int ricevuti = 0, back_sd = 0, ret = 0;
+	natl room_id = stanza->id;
+	stanza->status = QUITTING;
+	while(ricevuti < sizeof(back_sd)){
+		ret = read(sd,&back_sd + ricevuti,sizeof(back_sd) - ricevuti);
+		ricevuti += ret;
+	}
+	printf("(Main) il socket (%d) sta tornando alla home dalla room %d\n",back_sd, room_id);
+	printf("(Main) giocatori nella room %d: %d -> %d\n",room_id,stanza->numPlayers,stanza->numPlayers - 1);
+	stanza->numPlayers--;
+	// se non ci sono piu giocatori nella stanza uccidi il processo
+	// e rimuovi il file descriptor
+	if (!stanza->numPlayers){
+		// elimina la room
+		if(closeRoom(room_id))
+			printf("(Main) room %d non chiusa correttamente\n",room_id);
+		printf("(Main) la room %d è stata chiusa\n",room_id);
+		FD_CLR(stanza->fp[0],master);
+	}
+	// reinserisci sd in master
+	homeConnessione(back_sd);
+	FD_SET(back_sd,master);
+}
+#endif
 
 

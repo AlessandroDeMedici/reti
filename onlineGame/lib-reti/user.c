@@ -1,7 +1,5 @@
 // user.c
 #include "user.h"
-#include <string.h>
-#include <stdlib.h>
 
 // lista globale di utenti
 struct user * utenti = 0;
@@ -45,6 +43,20 @@ struct user * controllaUtente(char * username, char * password)
 	}
 	return 0;		// username non trovato
 }
+
+
+struct user * controllaUsername(char * username, char * password)
+{
+	struct user * p = utenti;
+	while (p){
+		if (!strcmp(p->username,username)){
+			return p;
+		}
+		p = p->next;
+	}
+	return 0;
+}
+
 
 
 

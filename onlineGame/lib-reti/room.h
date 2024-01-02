@@ -1,9 +1,6 @@
 #ifndef ROOM_INCLUSA
 #define ROOM_INCLUSA
-
-#include <unistd.h>
-#include "costanti.h"
-#include "user.h"
+#include "../lib-reti.h"
 struct des_room
 { 
 	struct des_room * next;	// puntatore per realizzare lista di rooms
@@ -26,5 +23,8 @@ size_t activeRooms(char *buffer);
 size_t sendPlayer(struct des_room *, int,char*,char padre);
 int receivePlayer(struct des_room *,char*, char padre);
 size_t startRoom(struct des_room *);
-
+#ifdef SERVER
+void avviaRoom(int sd, int max_sd, fd_set * master, struct des_room * stanza);
+void tornaIndietro(int sd, fd_set * master, struct des_room * stanza);
+#endif
 #endif

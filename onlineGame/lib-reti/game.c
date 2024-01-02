@@ -1,9 +1,4 @@
 #include "game.h"
-#include "../menu.h"
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include "../utility.h"
 
 struct room stanza;	// struttura globale room
 struct game gioco;	// struttura globale oggetti
@@ -37,8 +32,6 @@ void aggiornaOggetto(int sd)
 	o = &oggetti[id];
 	// invia lo status aggiornato dell'oggetto
 	send(sd,&o->status,sizeof(o->status), 0);
-
-	printf("Invio al client %d lo status dell'oggetto %s (%d)\n",sd,o->nome,o->status);
 }
 
 // funzione chiamata dal server per sbloccare l'oggetto o
@@ -179,35 +172,35 @@ void objs(int sd)
 }
 
 // funzione che elabora le richieste dei client
-void game(int sd, natb opcode)
+void game(int id, int sd, natb opcode)
 {
 	switch (opcode){
 		case (UPDATE_OBJECT):
-			printf("%d ha fatto aggiornaOggetto()\n",sd);
+			printf("(%d) il socket (%d) ha fatto aggiornaOggetto()\n",id,sd);
 			aggiornaOggetto(sd);
 			break;
 		case (UNLOCK):
-			printf("%d ha fatto sbloccaOggetto()\n",sd);
+			printf("(%d) il socket (%d) ha fatto sbloccaOggetto()\n",id,sd);
 			sbloccaOggetto(sd);
 			break;
 		case (TAKE):
-			printf("%d ha fatto ottieniOggetto()\n",sd);
+			printf("(%d) il socket (%d) ha fatto ottieniOggetto()\n",id,sd);
 			ottieniOggetto(sd);
 			break;
 		case (USE):
-			printf("%d ha fatto usaOggetto()\n",sd);
+			printf("(%d) il socket (%d) ha fatto usaOggetto()\n",id,sd);
 			usaOggetto(sd);
 			break;
 		case (UPDATE_TOKEN):
-			printf("%d ha fatto getToken()\n",sd);
+			printf("(%d) il socket (%d) ha fatto getToken()\n",id,sd);
 			getToken(sd);
 			break;
 		case (INC_TOKEN):
-			printf("%d ha fatto token()\n",sd);
+			printf("(%d) il socket (%d) ha fatto token()\n",id,sd);
 			token();
 			break;
 		case (GET_TIME):
-			printf("%d ha fatto ottieniTempo()\n",sd);
+			printf("(%d) il socket (%d) ha fatto ottieniTempo()\n",id,sd);
 			ottieniTempo(sd);
 			break;
 	}	

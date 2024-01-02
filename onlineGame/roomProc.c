@@ -1,19 +1,11 @@
-#define SERVER
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
+#include "lib-reti.h"
 #include <errno.h>
-#include "lib-reti/lib-reti.h"
 
 
 int main(int argn, char * argv[])
 {
 	int len;
+	char buffer[256];
 
 	// pipe per lo scambio di dati con il processo padre
 	int pf[2];
@@ -28,8 +20,6 @@ int main(int argn, char * argv[])
 	fd_set read_fds;
 	int max_fd;
 	int ret;
-
-	// controllo sugli input DA AGGIUNGERE
 
 	// inizializzazione room
 	init();
@@ -51,9 +41,10 @@ int main(int argn, char * argv[])
 	while(1){
 		read_fds = master;
 		ret = select(max_fd + 1, &read_fds,NULL,NULL,NULL);
-		printf("(%d): descrittori pronti: %d\n",id,ret);
-		if (ret == -1)
-			printf("errno: %d\n",errno);
+		if (ret == -1){
+			sprintf(buffer,"(%d) la select ha ritornato -1, errno: %d\n",id,errno);
+			perror(buffer);
+		}
 		if (FD_ISSET(pf[0],&read_fds)){
 			// e' arrivato un nuovo player
 			int new_sd;
@@ -63,7 +54,7 @@ int main(int argn, char * argv[])
 			ret = read(pf[0],username,len);	// username
 			addPlayer(username,new_sd);
 			players++;
-			printf("(%d): %s è entrato a far parte della room, adesso ci sono %d players\n",id,username,players);
+			printf("(%d) %s è entrato a far parte della room, adesso ci sono %d players\n",id,username,players);
 			if (new_sd > max_fd)
 				max_fd = new_sd;
 			
@@ -95,16 +86,16 @@ int main(int argn, char * argv[])
 					// vieni rispedito al main server process
 					write(fp[1],&i,sizeof(i));		// inviato
 					players--;
-					printf("(%d): %d è uscito dalla room, adesso ci sono %d players\n",id,i,players);
+					printf("(%d) il socket %d è uscito dalla room, adesso ci sono %d players\n",id,i,players);
 					FD_CLR(i,&master);
 					// se non ci sono piu players
 					if (!players){
-						printf("(%d): chiusura della room...\n",id);
+						printf("(%d) chiusura della room...\n",id);
 						exit(0);
 					}
 					break;
 				default:
-					game(i,opcode);
+					game(id,i,opcode);
 					break;
 			}
 		}

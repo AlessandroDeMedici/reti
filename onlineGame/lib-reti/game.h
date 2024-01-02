@@ -1,7 +1,6 @@
 #ifndef GAME_INCLUSA
 #define GAME_INCLUSA
-#include <time.h>
-#include "../costanti.h"
+#include "../lib-reti.h"
 
 #define MAX_LOCAZIONI 5
 #define MAX_OGGETTI 10
@@ -85,7 +84,7 @@ void rimuoviInventario(natb id,struct oggetto * o);
 size_t aggiungiInventario(natb id,struct oggetto * o);
 void usaOggetto(int sd);
 void objs(int sd);
-void game(int sd, natb opcode);
+void game(int id,int sd, natb opcode);
 void sbloccaPlayers();
 void getToken();
 void quitRoom(int sd);

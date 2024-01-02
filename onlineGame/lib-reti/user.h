@@ -1,8 +1,7 @@
 // user.h
 #ifndef USER_INCLUSA
 #define USER_INCLUSA
-
-#include <arpa/inet.h>
+#include "../lib-reti.h"
 
 struct user
 {
@@ -12,8 +11,8 @@ struct user
 };
 
 // lista di tutti gli utenti
-struct user * nuovoUtente(char * username, char * password);
-struct user * controllaUtente(char * username, char * password);
-
+struct user * nuovoUtente(char*, char*);
+struct user * controllaUtente(char*, char*);
+struct user * controllaUsername(char *,char*);
 
 #endif

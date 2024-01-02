@@ -1,38 +1,45 @@
-#include <arpa/inet.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include "lib-reti/lib-reti.h"
-#include <fcntl.h>
+#include "lib-reti.h"
+#include <pthread.h>
 
-int main () 
-{	
+int chiusura = 0;
+
+void * server(void * arg)
+{
+	int port;
 	char username[] = "admin%d";
 	char temp[50];
 
 	int ret, max_sd, sd;
-	char buffer[1024];
 	struct sockaddr_in my_addr, client_addr;
 	socklen_t len;
 	fd_set master, read_master;
 
+	// passaggio della porta
+	port = *(int *)arg;
+	free(arg);
+	
 	// creazione socket
 	sd = socket(AF_INET, SOCK_STREAM, 0);
+	
 	// inizializzazione indirizzo
 	memset(&my_addr, 0, sizeof(my_addr)); // Pulizia
 	my_addr.sin_family = AF_INET ;
-	my_addr.sin_port = htons(1212);
-	inet_pton(AF_INET, "1227.0.0.1", &my_addr.sin_addr);
+	my_addr.sin_port = htons(port);
+	inet_pton(AF_INET, "127.0.0.1", &my_addr.sin_addr);
+	
 	// allaccio del socket
 	ret = bind(sd, (struct sockaddr*)&my_addr, sizeof(my_addr));
-	if (!ret) ;
-	// iniziamo ad attendere connessioni
+	if (ret == -1){
+		perror("Error binding...\n");
+		pthread_exit(NULL);
+	}
+	
+	// inizio ad ascoltare connessioni
 	ret = listen(sd, 10);
-	if (!ret) ;
+	if (ret == -1){
+		perror("Error listen...\n");
+		pthread_exit(NULL);
+	}
 	len = sizeof(client_addr);
 
 	// inizializzo fd set
@@ -41,7 +48,7 @@ int main ()
 	FD_SET(sd,&master);
 	max_sd = sd;
 	
-	// nuovo utente di prova
+	// utenti di prova
 	for (int i = 0; i < 20; i++){
 		sprintf(temp,username,i);
 		nuovoUtente(temp,temp);
@@ -49,9 +56,15 @@ int main ()
 
 	while(1)
 	{
+		// controllo sulla chiusura del server
+		if (chiusura){
+			if (nessunaConnessione()){
+				close(sd);
+				pthread_exit(0);
+			}
+		}
 		read_master = master;
 		ret = select(max_sd + 1,&read_master,NULL,NULL,NULL);
-		printf("select ha ritornato: %d\n",ret);
 		for (int i = 0; i < max_sd + 1; i++){
 			if (!FD_ISSET(i,&read_master))
 				continue;
@@ -83,9 +96,7 @@ int main ()
 				// altrimenti e' un socket
 				struct des_room * stanza = getRoom(i);
 				if (!stanza){
-					natl room_id = 0;
-					natb opcode = NOK;
-					struct des_connection * conn = 0;
+					natb opcode = 0;
 					// questo e' un socket che ci sta inviando un messaggio
 					ret = recv(i,&opcode,sizeof(opcode),0);
 					if (!ret){ 
@@ -97,74 +108,79 @@ int main ()
 					// switch sui vari comandi
 					switch(opcode){
 						case(START_ROOM):	
-							// ottengo il descrittore di connessione
-							conn = getConnessione(i);
-
-							// ricevo il room_id
-							ret = recv(i,&room_id,sizeof(room_id),0);
-							room_id = ntohl(room_id);
-							printf("%d vuole entrare nella room %d\n",i,room_id);
-							// entro nella room, se questa non esiste prima la creo
-							stanza = checkRoom(room_id);
-							if (!stanza){
-								stanza = createRoom(room_id);
-								printf("La room non esisteva, l'ho creata\n");
-								// se e' stata creata bisogna inserire fd della pipe in master
-								FD_SET(stanza->fp[0],&master);
-								if (stanza->fp[0] > max_sd)
-									max_sd = stanza->fp[0];
-							} else {
-								printf("La room esisteva\n");
-							}
-							ret = joinRoom(i,conn->utente,stanza);
-							if (!ret){
-								playingConnessione(i);
-								printf("%d e' entrato nella room %d\n",i,room_id);
-								FD_CLR(i,&master);	
-							} else { // la room era piena
-								printf("%d non e' entrato nella room %d perche era piena\n",i,room_id);
-								// invia un NOK
-								ret = send(i,&opcode,sizeof(opcode),0);
-							}
+							avviaRoom(i, max_sd,&master,stanza);
 							break;
 						case(ROOM_LIST):
-							if (!activeRooms(buffer))
-								sendString(i,buffer);
-							else
-								sendString(i,"Nessuna stanza attiva\n");
+							roomList(i);
 							break;
 						default:
 							break;
 					}
 				} else {
-					// questo e' un fd relativo ad una pipe che ci sta inviando un socket indietro
-					int ricevuti = 0, sd = 0;
-					stanza->status = QUITTING;
-					while(ricevuti < sizeof(sd)){
-						ret = read(i,&sd + ricevuti,sizeof(sd) - ricevuti);
-						ricevuti += ret;
-					}
-					printf("%d sta tornando alla home\n",sd);
-					printf("players prima: %d\n",stanza->numPlayers);
-					stanza->numPlayers--;
-					printf("players dopo: %d\n",stanza->numPlayers);
-					// se non ci sono piu giocatori nella stanza uccidi il processo
-					// e rimuovi il file descriptor
-					if (!stanza->numPlayers){
-						// elimina la room
-						if(closeRoom(stanza->id))
-							printf("room non chiusa correttamente\n");
-						printf("la room è stata chiusa\n");
-						FD_CLR(stanza->fp[0],&master);
-					}
-					// reinserisci sd in master
-					homeConnessione(sd);
-					FD_SET(sd,&master);
+					// riportare i socket
+					tornaIndietro(i,&master,stanza);
 				}	
 			}
 		}
 	}
-	return 0;
+	pthread_exit(NULL);
+}
+
+int main () 
+{
+	char buffer[128];
+	char *command;
+	char *arg;
+	int started = 0;
+	int port;
+	int * temp;
+	pthread_t thread;
+	// stampo il menu
+	printMenu();
+	while (1){
+		chiusura = 0;
+		fgets(buffer,128,stdin);
+		// correggo l'input (ho bisogno della marca di fine stringa)
+		for (int i = 0; i < 128; i++){
+			if (buffer[i] == '\n'){
+				buffer[i] = '\0';
+				break;
+			}
+		}
+
+		command = strtok(buffer," ");
+		arg = strtok(NULL," ");
+
+		if (!command){
+			continue;
+		}
+
+		if (!strcmp(command,"start")){
+			if (started)
+			{
+				printf("start - server already started...\n");
+				continue;
+			}
+			if (!arg)
+			{
+				printf("start - missing argument...\n");
+				continue;
+			}
+			// avvio il thread
+			sscanf(arg,"%d",&port);	
+			temp = (int *)malloc(sizeof(int));
+			*temp = port;
+			printf("Server in fase di avvio...\n");
+			pthread_create(&thread,NULL,server,(void *)temp);
+		} else if (!strcmp(command,"stop")){
+			chiusura = 1;
+			printf("Attendo la chiusura di tutte le connessioni...\n");
+			pthread_join(thread,NULL);
+			printf("Server chiuso correttamente!\n");
+		} else if (!strcmp(command,"help")){
+			printMenu();
+		}
+	}
 }
 
 

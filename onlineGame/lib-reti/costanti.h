@@ -1,8 +1,6 @@
 #ifndef COSTANTI_INCLUSA
 #define COSTANTI_INCLUSA
-
-#include <netinet/in.h>
-
+#include "netinet/in.h"
 // costanti
 #define MAX_PLAYERS 2		// numero massimo di giocatori per room
 #define MAX_TENTATIVI 3		// numero massimo di tentativi per fare login

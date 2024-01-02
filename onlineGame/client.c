@@ -1,24 +1,28 @@
-#include <arpa/inet.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <string.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include "lib-reti/lib-reti.h"
-#include <time.h>
+#include "lib-reti.h"
 
-int main () 
+int main (int argn, char * argv[]) 
 {
+	int port;
 	int ret, main;
 	struct sockaddr_in server_addr; // per il server
-	char username[50];
-	char password[50];
-	srand(time(NULL));
-	memset(username,0,50);
-	memset(password,0,50);
+	char username[64];
+	char password[64];
 	
+	// controllo sugli input
+	if (argn < 2)
+	{
+		printf("client - missing port\n");
+		return 1;
+	}
+
+	// inizializzazione della porta
+	port = atoi(argv[1]);
+	if (port < 0)
+	{
+		printf("client - bad port\n");
+		return 1;
+	}
+		
 	// inizializzazione gioco
 	init();
 
@@ -27,11 +31,10 @@ int main ()
 	
 	initsd(main);
 
-
 	/* Creazione indirizzo del server */
 	memset(&server_addr, 0, sizeof(server_addr)); // Pulizia
 	server_addr.sin_family = AF_INET ;
-	server_addr.sin_port = htons(1212);
+	server_addr.sin_port = htons(port);
 	inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr);
 
 
@@ -88,6 +91,5 @@ int main ()
 	
 	close(main);
 	exit(0);
-	
 	return 0;
 }

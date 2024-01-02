@@ -4,3 +4,16 @@ COSE DA FARE:
 	2. 	implementare un timer (il timer puo girare anche solo in locale dato che tutti i player iniziano insieme)
 		(opzionale). dare la possibilita ai player di partire in meno giocatori
 
+
+
+CHECKLIST:
+	1. connessione OK
+	2. login OK
+	3. menu
+	4. room
+	5. user
+	6. utility
+	7. game
+	8. costanti
+
+

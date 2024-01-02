@@ -1,15 +1,9 @@
 #include "utility.h"
-#include <string.h>
-#include <arpa/inet.h>
-#include "costanti.h"
-#include <stdio.h>
-#include <unistd.h>
 
 size_t sendString(int sd, char * string)
 { 
 	int ret, sent = 0, len = strlen(string) + 1;
 	natl length = htonl(len);
-	printf("la stringa e' lunga: %d\n",len);
 	ret = send(sd,&length,sizeof(natl),0);
 	ret = send(sd,string + sent,len - sent,0);
 	if (!ret) ;

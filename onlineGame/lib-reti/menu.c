@@ -1,12 +1,32 @@
 #include "menu.h"
-#include "costanti.h"
-#include <stdio.h>
-#include "utility.h"
-#include "game/game.h"
 
-// funzione che stampa il menu di login
-// per il server o per il client
-void printUserMenu()
+#ifdef SERVER
+// descrizione:
+// funzione usata dal server per rispondere alla richiesta di roomList
+// argomenti:
+// sd -> descrittore del socket
+void roomList(int sd)
+{
+	char buffer[512];
+	if (!activeRooms(buffer))
+		sendString(sd,buffer);
+	else
+		sendString(sd,"Nessuna stanza attiva\n");
+	printf("(Main) (%d) ha fatto roomList()\n",sd);
+}
+
+void printMenu()
+{
+	printf("***************** SERVER ESCAPE ROOM ****************\n");
+	printf("Comandi:\nstart [port] -> avvia il server sulla porta [port]\n");
+	printf("stop -> termina il server\n");
+	printf("*****************************************************\n");
+}
+
+#else
+// descrizione:
+// funzione che stampa il menu mostrato in fase di login o di registrazione
+void printMenu()
 {
 	printf("********** ESCAPE ROOM **********\n");
 	printf("Benvenuto sul server\n");
@@ -15,26 +35,28 @@ void printUserMenu()
 	printf("> ");
 }
 
-void printHome()
-{
-	printf("********** ESCAPE ROOM **********\n");
-	printf("Comandi:\n");
-	printf("start [room]: avvia la room con ID [room]\n");
-	printf("list: controlla tutte le rooma attive\n");
-	printf("end: esci e chiudi la connessione\n");
-	printf("*********************************\n");
-}
-
+// descrizione:
+// funzione usata dal client per richiedere le stanze attive
+// argomenti:
+// sd -> descrittore del socket
 void roomList(int sd)
 {
 	natb opcode = ROOM_LIST;
 	char buffer[256];
-	send(sd,&opcode,sizeof(opcode),0);
+	int ret = send(sd,&opcode,sizeof(opcode),0);
+	if (ret <= 0)
+		// errore nell'invio dell'opcode
+		return;
 	receiveString(sd,buffer);
 	printf("LISTA DELLE ROOMS:\n%s",buffer);
 }
 
-int avviaRoom(int sd, char * arg1)
+// descrizione:
+// funzione usata dal client per inviare una richiesta di avvia room
+// argomenti:
+// sd -> descrittore del socket
+// arg1 ->  stringa che contiene il room_id
+size_t avviaRoom(int sd, char * arg1)
 {
 	natb opcode = START_ROOM;
 	natl room;
@@ -57,7 +79,23 @@ int avviaRoom(int sd, char * arg1)
 	} else
 		return 1;
 }
+#endif
 
+
+// descrizione:
+// funzione che stampa il menu in home page
+void printHome()
+{
+	printf("********** ESCAPE ROOM **********\n");
+	printf("Comandi:\n");
+	printf("start [room]: avvia la room con ID [room]\n");
+	printf("list: controlla tutte le rooma attive\n");
+	printf("end: esci e chiudi la connessione\n");
+	printf("*********************************\n");
+}
+
+// descrizione:
+// funzione che stampa il menu del gioco con tutti i comandi
 void printHelp()
 {
 	printf("******************* Buona partita ******************\n");
