@@ -2,6 +2,7 @@
 #include <pthread.h>
 
 int chiusura = 0;
+int started = 0;
 
 void * server(void * arg)
 {
@@ -30,6 +31,7 @@ void * server(void * arg)
 	// allaccio del socket
 	ret = bind(sd, (struct sockaddr*)&my_addr, sizeof(my_addr));
 	if (ret == -1){
+		started = 0;
 		perror("Error binding...\n");
 		pthread_exit(NULL);
 	}
@@ -37,6 +39,7 @@ void * server(void * arg)
 	// inizio ad ascoltare connessioni
 	ret = listen(sd, 10);
 	if (ret == -1){
+		started = 0;
 		perror("Error listen...\n");
 		pthread_exit(NULL);
 	}
@@ -59,6 +62,7 @@ void * server(void * arg)
 		// controllo sulla chiusura del server
 		if (chiusura){
 			if (nessunaConnessione()){
+				started = 0;
 				close(sd);
 				pthread_exit(0);
 			}
@@ -131,9 +135,9 @@ int main ()
 	char buffer[128];
 	char *command;
 	char *arg;
-	int started = 0;
 	int port;
 	int * temp;
+	int stdout_copy = dup(STDOUT_FILENO);
 	pthread_t thread;
 	// stampo il menu
 	printMenu();
@@ -171,15 +175,18 @@ int main ()
 			temp = (int *)malloc(sizeof(int));
 			*temp = port;
 			printf("Server in fase di avvio...\n");
+			started = 1;
 			pthread_create(&thread,NULL,server,(void *)temp);
 		} else if (!strcmp(command,"stop")){
 			chiusura = 1;
 			printf("Attendo la chiusura di tutte le connessioni...\n");
 			pthread_join(thread,NULL);
 			printf("Server chiuso correttamente!\n");
+			started = 0;
 		} else if (!strcmp(command,"help")){
 			printMenu();
 		}
+		dup2(stdout_copy,STDOUT_FILENO);
 	}
 }
 

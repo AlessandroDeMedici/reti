@@ -847,7 +847,7 @@ void init()
 	strcpy(oggetti[1].nome, "cassaforte");
 	strcpy(oggetti[1].descrizione, "Una robusta cassaforte in metallo.");
 	strcpy(oggetti[1].descrizioneBloccato, "La cassaforte è bloccata saldamente.");
-	strcpy(oggetti[1].enigma, "Combinazione");
+	strcpy(oggetti[1].enigma, "Inserisci la combinazione");
 	strcpy(oggetti[1].risposta, "3141");
 	oggetti[1].status = BLOCCATO;
 
@@ -855,13 +855,13 @@ void init()
 	strcpy(oggetti[2].nome, "bottiglia");
 	strcpy(oggetti[2].descrizione, "La bottiglia sembra avere qualcosa al suo interno...");
 	strcpy(oggetti[2].descrizioneBloccato, "Una bottiglia apparentemente vuota.");
-	strcpy(oggetti[2].enigma, "Un alcolico con 3 lettere");
+	strcpy(oggetti[2].enigma, "E' il nome di un famoso alcolico ottenuto da bacche di ginepro, il suo nome ha 3 lettere");
 	strcpy(oggetti[2].risposta, "gin");
 	oggetti[2].status = BLOCCATO;
 
 	// biglietto
 	strcpy(oggetti[3].nome, "biglietto");
-	strcpy(oggetti[3].descrizione, "Sul biglietto c'e' scritto: La combinazione della cassaforte sono le prime 4 cifre di pi");
+	strcpy(oggetti[3].descrizione, "Sul biglietto c'e' scritto: La combinazione della cassaforte sono le prime 4 cifre di pi greco");
 	oggetti[3].status = HIDDEN;
 	
 	// chiave
