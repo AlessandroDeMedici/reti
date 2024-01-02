@@ -103,7 +103,7 @@ void printHelp()
 	printf("take [oggetto]\t\t\tsblocca o ottieni un oggetto\n");
 	printf("use [oggetto1] [oggetto2]\tusa un oggetto\n");
 	printf("time\t\t\t\tottieni il tempo rimanente\n");
-	printf("exit\t\t\t\tesci dal gioco\n");
+	printf("exit\t\t\t\tesci dall'enigma o esci dal gioco\n");
 	printf("****************************************************\n");
 }
 

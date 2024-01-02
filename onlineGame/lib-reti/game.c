@@ -84,9 +84,10 @@ natb getPlayerId(int sd)
 // trova nell'inventario del player id l'oggetto di nome c
 struct oggetto * findOggettoInventario(natl id,char * c)
 {
+	int i;
 	if (!c)
 		return NULL;
-	for (int i = 0; i < INVENTARIO; i++){
+	for (i = 0; i < INVENTARIO; i++){
 		if (!giocatori[id].inventario[i])
 			continue;
 		if (!strcmp(giocatori[id].inventario[i]->nome,c)){
@@ -99,9 +100,10 @@ struct oggetto * findOggettoInventario(natl id,char * c)
 // rimuove l'oggetto o dall'inventario del giocatore id
 void rimuoviInventario(natb id,struct oggetto * o)
 {
+	int i;
 	if (!o)
 		return;
-	for (int i = 0; i < INVENTARIO; i++){
+	for (i = 0; i < INVENTARIO; i++){
 		if (giocatori[id].inventario[i] == o)
 			giocatori[id].inventario[i] = NULL;
 	}
@@ -110,10 +112,11 @@ void rimuoviInventario(natb id,struct oggetto * o)
 // aggiunge l'oggetto o all'inventario del giocatore id
 size_t aggiungiInventario(natb id,struct oggetto * o)
 {
+	int i;
 	if (!o)
 		return 0;
 
-	for (int i = 0; i < INVENTARIO; i++){
+	for (i = 0; i < INVENTARIO; i++){
 		if (!giocatori[id].inventario[i]){
 			giocatori[id].inventario[i] = o;
 			return 0;
@@ -160,9 +163,10 @@ void usaOggetto(int sd)
 void objs(int sd)
 {
 	
+	int i;
 	natb id = getPlayerId(sd);
 
-	for (int i = 0; i < INVENTARIO; i++){
+	for (i = 0; i < INVENTARIO; i++){
 		printf("%d: ", i + 1);
 		if (giocatori[id].inventario[i])
 			printf("%s\n",giocatori[id].inventario[i]->nome);
@@ -209,8 +213,9 @@ void game(int id, int sd, natb opcode)
 // funzione per sbloccare i player per iniziare a giocare
 void sbloccaPlayers()
 {
+	int i;
 	natb opcode = 250;
-	for (int i = 0; i < MAX_PLAYERS; i++)
+	for (i = 0; i < MAX_PLAYERS; i++)
 		if (giocatori[i].p)
 			send(giocatori[i].sd,&opcode,sizeof(opcode),0);
 }
@@ -248,9 +253,10 @@ void ottieniTempo(int sd)
 
 void quitRoom(int sd)
 {
+	int i;
 	natb id = getPlayerId(sd);
 
-	for (int i = 0; i < INVENTARIO; i++){
+	for (i = 0; i < INVENTARIO; i++){
 		if (giocatori[id].inventario[i])
 			giocatori[id].inventario[i]->status = FREE;
 	}
@@ -314,9 +320,10 @@ void ottieniOggetto(struct oggetto * o)
 // trova nell'inventario del player l'oggetto di nome c
 struct oggetto * findOggettoInventario(char * c)
 {
+	int i;
 	if (!c)
 		return NULL;
-	for (int i = 0; i < INVENTARIO; i++){
+	for (i = 0; i < INVENTARIO; i++){
 		if (!giocatore.inventario[i])
 			continue;
 		if (!strcmp(giocatore.inventario[i]->nome,c)){
@@ -407,22 +414,25 @@ void take(char *c)
 	
 	// se l'oggetto e' bloccato provo a sbloccarlo
 	if (o->status == BLOCCATO){
-		sblocca(o);
-		printf("Hai sbloccato %s\n",o->nome);
-	} else {
+		// se l'oggetto e' stato sbloccato
+		if (!sblocca(o))
+			printf("Hai sbloccato %s\n",o->nome);
+		// l'utente ha fatto exit
+	} else if (o->status == FREE) {
 		ottieni(o);
 		printf("Hai ottenuto %s\n",o->nome);
 	}
 
 }
 
-void sblocca(struct oggetto * o)
+size_t sblocca(struct oggetto * o)
 {
 	char buffer[64];
 	printf("%s\n",o->enigma);
 	while(1){
+		int i;
 		fgets(buffer,63,stdin);
-		for (int i = 0; i < 63; i++){
+		for (i = 0; i < 63; i++){
 			if (buffer[i] == '\n')
 			{
 				buffer[i] = '\0';
@@ -433,9 +443,9 @@ void sblocca(struct oggetto * o)
 			printf("\r\033[KCorretto!\n");
 			o->status = FREE;
 			sbloccaOggetto(o);
-			return;
+			return 0;
 		} else if (!strcmp(buffer,"exit")){ // il player non vuole piu indovinare per ora
-			return;
+			return 1;
 		} else { // errore (aggiungere tentativi--)
 			printf("\r\033[KSbagliato\n");
 		}
@@ -444,7 +454,8 @@ void sblocca(struct oggetto * o)
 
 void ottieni(struct oggetto * o)
 {
-	for (int i = 0; i < INVENTARIO; i++){
+	int i;	
+	for (i = 0; i < INVENTARIO; i++){
 		if (giocatore.inventario[i])
 			continue;
 		giocatore.inventario[i] = o;
@@ -457,9 +468,10 @@ void ottieni(struct oggetto * o)
 
 void rimuoviInventario(struct oggetto * o)
 {
+	int i;
 	if (!o)
 		return;
-	for (int i = 0; i < INVENTARIO; i++){
+	for (i = 0; i < INVENTARIO; i++){
 		if (giocatore.inventario[i] == o)
 			giocatore.inventario[i] = NULL;
 	}
@@ -467,10 +479,11 @@ void rimuoviInventario(struct oggetto * o)
 
 size_t aggiungiInventario(struct oggetto * o)
 {
+	int i;
 	if (!o)
 		return 0;
 
-	for (int i = 0; i < INVENTARIO; i++){
+	for (i = 0; i < INVENTARIO; i++){
 		if (!giocatore.inventario[i]){
 			giocatore.inventario[i] = o;
 			return 0;
@@ -550,7 +563,8 @@ void use(char * obj1, char * obj2)
 // stampa tutti gli oggetti nell'inventario
 void objs()
 {
-	for (int i = 0; i < INVENTARIO; i++){
+	int i;
+	for (i = 0; i < INVENTARIO; i++){
 		printf("%d: ", i + 1);
 		if (giocatore.inventario[i])
 			printf("%s\n",giocatore.inventario[i]->nome);
@@ -599,7 +613,7 @@ void game()
 	printHelp();
 
 	while(1){
-		
+		int i;
 		printf("> ");
 		fgets(buffer,127,stdin);
 
@@ -614,7 +628,7 @@ void game()
 		}
 
 
-		for (int i =0; i < 128; i++){
+		for (i =0; i < 128; i++){
 			if (buffer[i] == '\n'){
 				buffer[i] = '\0';
 				break;
@@ -716,9 +730,10 @@ void ottieniTempo()
 // ritorna l'oggetto di nome c
 struct oggetto * findOggetto(char * c)
 {
+	int i;
 	if (!c)
 		return NULL;
-	for (int i = 0; i < MAX_OGGETTI; i++){
+	for (i = 0; i < MAX_OGGETTI; i++){
 		if (!strcmp(oggetti[i].nome,c)){
 			return &oggetti[i];
 		}
@@ -741,9 +756,10 @@ natb getObjectId(struct oggetto * o)
 // trova la location
 struct location * findLocation(char * c)
 {
+	int i;
 	if (!c)
 		return NULL;
-	for (int i = 0; i < MAX_LOCAZIONI; i++){
+	for (i = 0; i < MAX_LOCAZIONI; i++){
 		if (!strcmp(locazioni[i].nome,c))
 			return &locazioni[i];
 	}
@@ -753,9 +769,10 @@ struct location * findLocation(char * c)
 // trova la ricetta dati gli oggetti
 struct ricetta * findRicetta(struct oggetto * o1, struct oggetto * o2)
 {
+	int i;
 	if (!o1)
 		return NULL;
-	for (int i = 0; i < MAX_RICETTE; i++){
+	for (i = 0; i < MAX_RICETTE; i++){
 		// nelle ricette non conta l'ordine degli oggetti usati
 		if (	(o1 == ricette[i].oggetto1 && o2 == ricette[i].oggetto2) ||
 			(o1 == ricette[i].oggetto2 && o2 == ricette[i].oggetto1)
@@ -805,7 +822,8 @@ void win()
 // funzione per aggiungere una ricetta
 void aggiungiRicetta(struct oggetto * o1, struct oggetto * o2, struct oggetto * dst, char action)
 {
-	for (int i = 0; i < MAX_RICETTE; i++){
+	int i;
+	for (i = 0; i < MAX_RICETTE; i++){
 		if (!ricette[i].oggetto1){ // mi fermo alla prima ricetta libera
 			ricette[i].oggetto1 = o1;
 			ricette[i].oggetto2 = o2;

@@ -1,7 +1,6 @@
 // connessione.c
 #include "connessione.h"
 
-
 // lista delle connessioni attualmente attive
 struct des_connection * connessioni = 0;
 

@@ -138,6 +138,7 @@ int receivePlayer(struct des_room * p, char * username, char padre)
 // abbiamo raggiunto il numero di players necessari per avviare la room
 size_t startRoom(struct des_room * p)
 {
+	int i;
 	// strutture per creare il nuovo processo
 	pid_t pid;
 	char stringa1[10];
@@ -163,9 +164,13 @@ size_t startRoom(struct des_room * p)
 	}
 	// processo padre
 	// deve inviare i MAX_PLAYERS player 
-	for (int i = 0; i < MAX_PLAYERS; i++){
+	for (i = 0; i < MAX_PLAYERS; i++){
 		sendPlayer(p,p->players[i],p->users[i]->username,1);
 	}
+
+	// setto la stanza a STARTED
+	p->status = STARTED;
+	
 	return 0;
 }
 
@@ -184,7 +189,6 @@ size_t joinRoom(int sd, struct user * u, struct des_room * p)
 	// player massimi per la room allora la avvia
 	if (p->numPlayers == MAX_PLAYERS){
 		startRoom(p);
-		p->status = STARTED;
 	}
 	return 0;
 }
@@ -225,7 +229,11 @@ size_t activeRooms(char * buffer)
 		return 1;
 	}
 	while(p){
-		sprintf(buffer,"Room %d\tnumPlayers:%d/%d\n",p->id,p->numPlayers,MAX_PLAYERS);
+		char joinable = 0;
+		if (p->status == CREATED)
+			joinable = 1;
+
+		sprintf(buffer,"Room %d\tnumPlayers:%d/%d\tjoinable:%d\n",p->id,p->numPlayers,MAX_PLAYERS,joinable);
 		len = strlen(buffer);
 		buffer += len;
 		p = p->next;
@@ -297,6 +305,13 @@ void tornaIndietro(int sd, fd_set * master, struct des_room * stanza)
 	// reinserisci sd in master
 	homeConnessione(back_sd);
 	FD_SET(back_sd,master);
+}
+
+size_t nessunaRoom()
+{
+	if (!room)
+		return 1;
+	return 0;
 }
 #endif
 

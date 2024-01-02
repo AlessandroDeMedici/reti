@@ -9,6 +9,7 @@ void * server(void * arg)
 	int port;
 	char username[] = "admin%d";
 	char temp[50];
+	int i;
 
 	int ret, max_sd, sd;
 	struct sockaddr_in my_addr, client_addr;
@@ -52,7 +53,7 @@ void * server(void * arg)
 	max_sd = sd;
 	
 	// utenti di prova
-	for (int i = 0; i < 20; i++){
+	for (i = 0; i < 20; i++){
 		sprintf(temp,username,i);
 		nuovoUtente(temp,temp);
 	}
@@ -61,7 +62,7 @@ void * server(void * arg)
 	{
 		// controllo sulla chiusura del server
 		if (chiusura){
-			if (nessunaConnessione()){
+			if (nessunaConnessione() && nessunaRoom()){
 				started = 0;
 				close(sd);
 				pthread_exit(0);
@@ -69,7 +70,7 @@ void * server(void * arg)
 		}
 		read_master = master;
 		ret = select(max_sd + 1,&read_master,NULL,NULL,NULL);
-		for (int i = 0; i < max_sd + 1; i++){
+		for (i = 0; i < max_sd + 1; i++){
 			if (!FD_ISSET(i,&read_master))
 				continue;
 			if (i == sd){
@@ -137,6 +138,7 @@ int main ()
 	char *arg;
 	int port;
 	int * temp;
+	int i;
 	int stdout_copy = dup(STDOUT_FILENO);
 	pthread_t thread;
 	// stampo il menu
@@ -145,7 +147,7 @@ int main ()
 		chiusura = 0;
 		fgets(buffer,128,stdin);
 		// correggo l'input (ho bisogno della marca di fine stringa)
-		for (int i = 0; i < 128; i++){
+		for (i = 0; i < 128; i++){
 			if (buffer[i] == '\n'){
 				buffer[i] = '\0';
 				break;

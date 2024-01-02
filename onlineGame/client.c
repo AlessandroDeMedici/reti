@@ -3,7 +3,7 @@
 int main (int argn, char * argv[]) 
 {
 	int port;
-	int ret, main;
+	int ret, main_socket;
 	struct sockaddr_in server_addr; // per il server
 	char username[64];
 	char password[64];
@@ -27,9 +27,9 @@ int main (int argn, char * argv[])
 	init();
 
 	/* Creazione socket */
-	main = socket(AF_INET, SOCK_STREAM, 0);
+	main_socket = socket(AF_INET, SOCK_STREAM, 0);
 	
-	initsd(main);
+	initsd(main_socket);
 
 	/* Creazione indirizzo del server */
 	memset(&server_addr, 0, sizeof(server_addr)); // Pulizia
@@ -38,26 +38,26 @@ int main (int argn, char * argv[])
 	inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr);
 
 
-	ret = connect(main, (struct sockaddr*)&server_addr, sizeof(server_addr));
+	ret = connect(main_socket, (struct sockaddr*)&server_addr, sizeof(server_addr));
 	if (ret) ;
 
 	// funzione per fare il login
-	if (userLogin(main,username,password)){
-		close(main);
+	if (userLogin(main_socket,username,password)){
+		close(main_socket);
 		exit(0);
 	}
 	
-	// una volta fatto il login si entra nel main menu
+	// una volta fatto il login si entra nel main_socket menu
 	printHome();
 
 	while (1){
 		char buffer[256];
 		char * command;
 		char * arg1;
-		
+		int i;
 		printf("> ");
 		fgets(buffer,255,stdin);
-		for (int i = 0; i < 256; i++)
+		for (i = 0; i < 256; i++)
 			if (buffer[i] == '\n'){
 				buffer[i] = '\0';
 				break;
@@ -75,21 +75,21 @@ int main (int argn, char * argv[])
 				printf("start - missing room id\n");
 				continue;
 			}
-			if (!avviaRoom(main,arg1))
+			if (!avviaRoom(main_socket,arg1))
 				game();
 			else {
 				printf("Room piena o gia' avviata\n");
 				continue;
 			}
 		} else if (strstr(command,"list")){
-			roomList(main);
+			roomList(main_socket);
 		} else if (strstr(command,"end")) // chiude la connessione con il server
 			break;
 		else
 			printf("\033[A\r\033[K");
 	}
 	
-	close(main);
+	close(main_socket);
 	exit(0);
 	return 0;
 }

@@ -14,7 +14,7 @@
 
 // status della room
 #define CREATED 0x00		// status della room creata, i giocatori stanno joinando
-#define STARTED 0x01		// status della room in cui tutti i giocatori sono entrati ed il game sta iniziando
+#define STARTED 0x01		// status della room in cui i giocatori stanno giocando e non e' piu possibile entrare
 #define QUITTING 0x01		// status della room terminata, i giocatori stanno uscendo
 
 // opcodes (messaggi) - home

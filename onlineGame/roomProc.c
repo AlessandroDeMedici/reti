@@ -39,6 +39,7 @@ int main(int argn, char * argv[])
 
 
 	while(1){
+		int i;
 		read_fds = master;
 		ret = select(max_fd + 1, &read_fds,NULL,NULL,NULL);
 		if (ret == -1){
@@ -66,7 +67,7 @@ int main(int argn, char * argv[])
 
 			FD_SET(new_sd,&master);
 		}
-		for (int i = 0; i < max_fd + 1; i++){
+		for (i = 0; i < max_fd + 1; i++){
 			if (!FD_ISSET(i,&read_fds) || i == pf[0])
 				continue;
 				// devo servire la richiesta di un player

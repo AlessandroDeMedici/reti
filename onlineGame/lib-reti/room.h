@@ -26,5 +26,6 @@ size_t startRoom(struct des_room *);
 #ifdef SERVER
 void avviaRoom(int sd, int max_sd, fd_set * master, struct des_room * stanza);
 void tornaIndietro(int sd, fd_set * master, struct des_room * stanza);
+size_t nessunaRoom();
 #endif
 #endif

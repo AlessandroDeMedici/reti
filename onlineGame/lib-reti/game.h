@@ -100,7 +100,7 @@ void ottieniOggetto(struct oggetto * o);
 struct oggetto * findOggettoInventario(char * c);
 void look(char * c);
 void take(char *c);
-void sblocca(struct oggetto * o);
+size_t sblocca(struct oggetto * o);
 void ottieni(struct oggetto * o);
 void rimuoviInventario(struct oggetto * o);
 size_t aggiungiInventario(struct oggetto * o);

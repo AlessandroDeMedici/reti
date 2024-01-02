@@ -99,8 +99,9 @@ size_t loginUtente(int sd, char * username, char * password)
 {
 	natl ret;
 	natb opcode = 0;
+	int i;
 	// per un numero di volte pari a MAX TENTATIVI vengono richiesti username e password
-	for (int i = 0; i < MAX_TENTATIVI; i++){
+	for (i = 0; i < MAX_TENTATIVI; i++){
 		printf("> Username: ");
 		scanf("%s",username);
 		printf("> Password: ");
@@ -140,8 +141,9 @@ struct user * loginServer(int sd,char * username, char * password)
 	natb opcode = 0;
 	natl ret;
 	struct user * utente = NULL;
+	int i;
 	// ricevo la stringa di login per numero massimo di volte MAX_TENTATIVI
-	for (int i = 0; i < MAX_TENTATIVI; i++){	
+	for (i = 0; i < MAX_TENTATIVI; i++){	
 		// il client si e' disconnesso
 		if (riceviLogin(sd,username,password))
 			return NULL;
@@ -252,8 +254,9 @@ size_t userLogin(int sd, char * username, char * password)
 	printMenu();
 	// ottengo il comando (login o register)
 	while (1){
+		int i;
 		fgets(buffer,63,stdin);
-		for (int i = 0; i < 64; i++){
+		for (i = 0; i < 64; i++){
 			if (buffer[i] == '\n')
 				buffer[i] = '\0';
 		}
