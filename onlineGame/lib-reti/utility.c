@@ -3,8 +3,12 @@
 size_t sendString(int sd, char * string)
 { 
 	int ret, sent = 0, len = strlen(string) + 1;
+	if (string[0] == '\0' || string[0] == '\n')
+		len = 0;
 	natl length = htonl(len);
 	ret = send(sd,&length,sizeof(natl),0);
+	if (!len)
+		return 0;
 	ret = send(sd,string + sent,len - sent,0);
 	if (!ret) ;
 	return 0;
@@ -16,6 +20,8 @@ size_t receiveString(int sd, char * string)
 	natl length;
 	ret = recv(sd,&length,sizeof(natl),0);
 	len = ntohl(length);
+	if (!len)
+		return 0;
 	ret = 0;
 	ret = recv(sd,string + received,len - received,0);
 	if (!ret) ;

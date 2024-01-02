@@ -5,7 +5,13 @@ struct game gioco;	// struttura globale oggetti
 struct oggetto oggetti[MAX_OGGETTI];
 struct location locazioni[MAX_LOCAZIONI];
 struct ricetta ricette[MAX_RICETTE];
+
+
 char buffer[1024];	// buffer globale messaggio
+natb buffer_id = 0;	// id del player che ha inviato il messaggio
+			// 0 se non e' presente
+natb sent[MAX_PLAYERS];	// giocatori a cui e' stato inviato il messaggio
+natb now = 0;
 
 #ifdef SERVER
 // codice del server
@@ -28,9 +34,62 @@ void addPlayer(char * username, int sd)
 // per rispondere alla richiesta di invia messaggio
 // argomenti:
 // sd -> descrittore del socket
-void inviaMessaggio(int sd)
+void inviaMessaggio(int id,int sd)
 {
+	char * temp = buffer;
+	natb pid = getPlayerId(sd);
+	natb opcode = NOK;
+	int i, ret;
 
+	// controllo se posso inviare, altrimenti invio un NOK
+	// questo e' il raro caso in cui il server soddisfi due richieste di tell allo stesso
+	// ciclo, in questo caso il messaggio dalla seconda richiesta in poi vengono scartati
+	if (now){
+		ret = send(sd,&opcode,sizeof(opcode),0);
+		if (!ret)
+			perror("inviaMessaggio - errore in fase di send");
+		return;
+	}
+
+	// invio un OK
+	opcode = OK;
+	ret = send(sd,&opcode,sizeof(opcode),0);
+
+	// adesso attendo la stringa
+	sprintf(temp,"%s: ",giocatori[pid].username);
+	temp += strlen(buffer);
+	receiveString(sd,temp);
+	printf("(%d) il socket (%d) ha inviato il messaggio: %s\n",id,sd,buffer);
+
+	// inizializzo le strutture
+	buffer_id = pid;
+	for (i = 0; i < MAX_PLAYERS; i++){
+		sent[i] = 0;
+	}
+	sent[pid] = 1;
+}
+
+// descrizione:
+// funzione lanciata dal server
+// per rispondere alla richiesta di ricevi messaggio
+// argomenti:
+// sd -> descrittore del socket
+void riceviMessaggio(int sd)
+{
+	natl len = 0;
+	int ret = 0;
+	natb pid = getPlayerId(sd);
+	if (buffer[0] != '\0' && (!sent[pid])){
+		// deve essere presente una stringa e non deve essere gia stata inviata a questo player
+		sendString(sd,buffer);
+		sent[pid] = 1;
+	} else {
+		// se non e' presente alcuna stringa
+		len = 0;
+		ret = send(sd,&len,sizeof(len),0);
+		if (!ret)
+			perror("riceviMessaggio - errore in fase di invio");
+	}
 }
 
 // funzione chiamata dal server per rispondere alla richiesta di aggiornamento dell'oggetto
@@ -218,6 +277,14 @@ void game(int id, int sd, natb opcode)
 			printf("(%d) il socket (%d) ha fatto ottieniTempo()\n",id,sd);
 			ottieniTempo(sd);
 			break;
+		case (RICEVI_MESSAGGIO):
+			printf("(%d) il socket (%d) ha fatto riceviMessaggio()\n",id,sd);
+			riceviMessaggio(sd);
+			break;
+		case (INVIA_MESSAGGIO):
+			printf("(%d) il socket (%d) ha fatto inviaMessaggio()\n",id,sd);
+			inviaMessaggio(id,sd);
+			break;
 	}	
 }
 
@@ -225,7 +292,7 @@ void game(int id, int sd, natb opcode)
 void sbloccaPlayers()
 {
 	int i;
-	natb opcode = 250;
+	natb opcode = OK;
 	for (i = 0; i < MAX_PLAYERS; i++)
 		if (giocatori[i].p)
 			send(giocatori[i].sd,&opcode,sizeof(opcode),0);
@@ -284,6 +351,53 @@ void initsd(int sockd)
 }
 
 struct player giocatore;
+
+void inviaMessaggio(char * arg)
+{
+	// invio opcode
+	natb opcode = INVIA_MESSAGGIO;
+	int ret = send(sd,&opcode,sizeof(opcode),0);
+	
+	// attendo per un ok o un nok
+	ret = recv(sd,&opcode,sizeof(opcode),0);
+	if (ret <= 0){
+		perror("Inviamessaggio - errore in fase di receive");
+	}
+	if (opcode == NOK){
+		printf("Non e' stato possibile inviare il messaggio\n");
+		return;
+	}
+
+	if (ret <= 0) {
+		perror("inviaMessaggio - errore in fase di send");
+	}
+
+	// invio la stringa
+	sendString(sd,arg);
+}
+
+void riceviMessaggio()
+{
+	// invio opcode
+	natb opcode = RICEVI_MESSAGGIO;
+	int ret = send(sd,&opcode,sizeof(opcode),0);
+	natl len = 0;
+	if (ret <= 0) {
+		perror("riceviMessaggio - errore in fase di send");
+	}
+
+	// ricevo la stringa
+	ret = recv(sd,&len,sizeof(len),0);
+	len = ntohl(len);
+	if (!len){
+		return;
+	}
+
+	ret = recv(sd,buffer,len,0);
+	stampaAnimata(buffer);
+	printf("\n");
+}
+
 
 // funzione chiamata dal client per richiedere di aggiornare l'oggetto
 void aggiornaOggetto(struct oggetto * o)
@@ -611,7 +725,7 @@ void quitRoom()
 // funzione lanciata dal client per gestire il gioco
 void game()
 {
-	char buffer[128];
+	char buffer[1024];
 	char * command;
 	char * arg1;
 	char * arg2;
@@ -629,17 +743,26 @@ void game()
 		fgets(buffer,127,stdin);
 
 
-		// prima di eseguire il comando controllo
-		// il tempo
-		// controllo sul tempo (perso)
+		// prima di eseguire il comando controllo il tempo
+		// controllo sul tempo
 		if (controllaTempo()){
 			lose();
 			quitRoom();
 			break;
 		}
+		
+		// controllo se sono presenti messaggi
+		riceviMessaggio();
 
-
-		for (i =0; i < 128; i++){
+		// controllo sui token (vinto)
+		getToken();
+		if (gioco.token == MAX_TOKEN){
+			win();
+			quitRoom();
+			break;
+		}
+		
+		for (i = 0; i < 128; i++){
 			if (buffer[i] == '\n'){
 				buffer[i] = '\0';
 				break;
@@ -647,8 +770,6 @@ void game()
 		}
 		
 		command = strtok(buffer," ");
-		arg1 = strtok(NULL," ");
-		arg2 = strtok(NULL," ");
 	
 		if (!command){
 			printf("\033[A\r\033[K");
@@ -662,31 +783,27 @@ void game()
 			objs();
 		}
 		else if (!strcmp(command,"use")){
+			arg1 = strtok(NULL," ");
+			arg2 = strtok(NULL,"");
 			use(arg1,arg2);
 		}
 		else if (!strcmp(command,"take")){
+			arg1 = strtok(NULL," ");
 			take(arg1);
 		}
 		else if (!strcmp(command,"look")){
+			arg1 = strtok(NULL," ");
 			look(arg1);
-		}
-		else if (!strcmp(command,"start")){
-			startRoomID(arg1);
 		}
 		else if (!strcmp(command,"time")){
 			stampaTempo();
 		}
+		else if (!strcmp(command,"tell")){
+			arg1 = strtok(NULL,"");
+			inviaMessaggio(arg1);
+		}
 		else 
 			printf("\033[A\r\033[K");
-
-		// controllo sui token (vinto)
-		getToken();
-		if (gioco.token == MAX_TOKEN){
-			win();
-			quitRoom();
-			break;
-		}
-
 	}
 }
 
