@@ -89,6 +89,7 @@ void sbloccaPlayers();
 void getToken();
 void quitRoom(int sd);
 void startTime();
+void inviaMessaggio(int sd);
 void ottieniTempo();
 #else
 // metodi del client
@@ -112,6 +113,7 @@ void game();
 void getToken();
 void token();
 void quitRoom();
+void inviaMessaggio();
 void ottieniTempo();
 #endif
 

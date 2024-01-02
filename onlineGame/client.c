@@ -29,22 +29,26 @@ int main (int argn, char * argv[])
 	/* Creazione socket */
 	main_socket = socket(AF_INET, SOCK_STREAM, 0);
 	
+	// inizializzazione delle strutture per il game
 	initsd(main_socket);
 
-	/* Creazione indirizzo del server */
-	memset(&server_addr, 0, sizeof(server_addr)); // Pulizia
-	server_addr.sin_family = AF_INET ;
+	// inizializzazione indirizzo server
+	memset(&server_addr, 0, sizeof(server_addr));
+	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(port);
 	inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr);
 
 
 	ret = connect(main_socket, (struct sockaddr*)&server_addr, sizeof(server_addr));
-	if (ret) ;
+	if (ret){ // non sono riuscito a connettermi
+		perror("server unreachable");
+		return 1;
+	}
 
 	// funzione per fare il login
 	if (userLogin(main_socket,username,password)){
 		close(main_socket);
-		exit(0);
+		return 1;
 	}
 	
 	// una volta fatto il login si entra nel main_socket menu

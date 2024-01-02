@@ -5,6 +5,7 @@ struct game gioco;	// struttura globale oggetti
 struct oggetto oggetti[MAX_OGGETTI];
 struct location locazioni[MAX_LOCAZIONI];
 struct ricetta ricette[MAX_RICETTE];
+char buffer[1024];	// buffer globale messaggio
 
 #ifdef SERVER
 // codice del server
@@ -20,6 +21,16 @@ void addPlayer(char * username, int sd)
 	giocatori[indice].sd = sd;
 	giocatori[indice].p = 1;
 	indice++;
+}
+
+// descrizione:
+// funzione lanciata dal server
+// per rispondere alla richiesta di invia messaggio
+// argomenti:
+// sd -> descrittore del socket
+void inviaMessaggio(int sd)
+{
+
 }
 
 // funzione chiamata dal server per rispondere alla richiesta di aggiornamento dell'oggetto

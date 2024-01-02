@@ -33,7 +33,7 @@ void * server(void * arg)
 	ret = bind(sd, (struct sockaddr*)&my_addr, sizeof(my_addr));
 	if (ret == -1){
 		started = 0;
-		perror("Error binding...\n");
+		perror("Error binding...");
 		pthread_exit(NULL);
 	}
 	
@@ -41,7 +41,7 @@ void * server(void * arg)
 	ret = listen(sd, 10);
 	if (ret == -1){
 		started = 0;
-		perror("Error listen...\n");
+		perror("Error listen...");
 		pthread_exit(NULL);
 	}
 	len = sizeof(client_addr);
