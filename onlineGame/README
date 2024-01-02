@@ -1,14 +1,7 @@
-COSE DA FARE:
-	1. 	sistemare un bug che incorre quando un client lascia la 
-		partita prima che questa finisca (getPlayerId - player not found)
-	2. 	implementare un timer (il timer puo girare anche solo in locale dato che tutti i player iniziano insieme)
-		(opzionale). dare la possibilita ai player di partire in meno giocatori
-
-
 
 CHECKLIST:
-	1. connessione OK
-	2. login OK
+	1. connessione
+	2. login
 	3. menu
 	4. room
 	5. user
