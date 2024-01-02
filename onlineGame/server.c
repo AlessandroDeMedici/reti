@@ -46,6 +46,9 @@ void * server(void * arg)
 	}
 	len = sizeof(client_addr);
 
+	// server avviato correttamente
+	printf("(Main) server avviato correttamente!\n");
+
 	// inizializzo fd set
 	FD_ZERO(&read_master);
 	FD_ZERO(&master);
@@ -139,7 +142,6 @@ int main ()
 	int port;
 	int * temp;
 	int i;
-	int stdout_copy = dup(STDOUT_FILENO);
 	pthread_t thread;
 	// stampo il menu
 	printMenu();
@@ -180,6 +182,10 @@ int main ()
 			started = 1;
 			pthread_create(&thread,NULL,server,(void *)temp);
 		} else if (!strcmp(command,"stop")){
+			if (!started){
+				printf("Server non ancora avviato...\n");
+				continue;
+			}
 			chiusura = 1;
 			printf("Attendo la chiusura di tutte le connessioni...\n");
 			pthread_join(thread,NULL);
@@ -187,8 +193,12 @@ int main ()
 			started = 0;
 		} else if (!strcmp(command,"help")){
 			printMenu();
+		} else if (!strcmp(command,"exit")){
+			if (started){
+				printf("impossibile uscire, server in esecuzione...\n");
+			} else
+				break;
 		}
-		dup2(stdout_copy,STDOUT_FILENO);
 	}
 }
 

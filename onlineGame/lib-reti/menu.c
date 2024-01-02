@@ -17,10 +17,12 @@ void roomList(int sd)
 
 void printMenu()
 {
-	printf("***************** SERVER ESCAPE ROOM ****************\n");
-	printf("Comandi:\nstart [port] -> avvia il server sulla porta [port]\n");
-	printf("stop -> termina il server\n");
-	printf("*****************************************************\n");
+	printf(ANSI_GREEN "***************** SERVER ESCAPE ROOM ****************\n" ANSI_RESET);
+	printf("Comandi:\nstart [port]\t-> avvia il server sulla porta [port]\n");
+	printf("stop\t\t-> termina il server\n");
+	printf("help\t\t-> stampa questo menu con i comandi\n");
+	printf("exit\t\t-> esci\n");
+	printf(ANSI_GREEN "*****************************************************\n" ANSI_RESET);
 }
 
 #else
@@ -28,10 +30,10 @@ void printMenu()
 // funzione che stampa il menu mostrato in fase di login o di registrazione
 void printMenu()
 {
-	printf("********** ESCAPE ROOM **********\n");
+	printf(ANSI_GREEN "******************** ESCAPE ROOM ********************\n" ANSI_RESET);
 	printf("Benvenuto sul server\n");
-	printf("login: fai login\nregister: registati\n");
-	printf("*********************************\n");
+	printf("login:\t\tfai login\nregister:\tregistati\n");
+	printf(ANSI_GREEN "*****************************************************\n" ANSI_RESET);
 	printf("> ");
 }
 
@@ -81,30 +83,31 @@ size_t avviaRoom(int sd, char * arg1)
 }
 #endif
 
-
 // descrizione:
 // funzione che stampa il menu in home page
 void printHome()
 {
-	printf("********** ESCAPE ROOM **********\n");
-	printf("Comandi:\n");
-	printf("start [room]: avvia la room con ID [room]\n");
-	printf("list: controlla tutte le rooma attive\n");
-	printf("end: esci e chiudi la connessione\n");
-	printf("*********************************\n");
+	printf(ANSI_GREEN "******************** ESCAPE ROOM ********************\n" ANSI_RESET);
+	printf("Benvenuto nel main menu:\n");
+	printf("start [room]:\tavvia la room con ID [room]\n");
+	printf("list:\t\tcontrolla tutte le rooma attive\n");
+	printf("end:\t\tesci e chiudi la connessione\n");
+	printf(ANSI_GREEN "*****************************************************\n" ANSI_RESET);
 }
 
 // descrizione:
 // funzione che stampa il menu del gioco con tutti i comandi
 void printHelp()
 {
-	printf("******************* Buona partita ******************\n");
+	printf(ANSI_GREEN "******************* Buona partita ******************\n" ANSI_RESET);
 	printf("Comandi:\nlook [oggetto|location]\t\tstampa la descrizione di un oggetto o location\n");
 	printf("take [oggetto]\t\t\tsblocca o ottieni un oggetto\n");
 	printf("use [oggetto1] [oggetto2]\tusa un oggetto\n");
 	printf("time\t\t\t\tottieni il tempo rimanente\n");
-	printf("exit\t\t\t\tesci dall'enigma o esci dal gioco\n");
-	printf("****************************************************\n");
+	printf("tell [messaggio]\t\tinvia il [messaggio] a tutti i player\n");
+	printf("help\t\t\t\tstampa nuovamente questo menu con i comandi\n");
+	printf("exit\t\t\t\tesci dall'enigma o dalla partita\n");
+	printf(ANSI_GREEN "****************************************************\n" ANSI_RESET);
 }
 
 

@@ -1,6 +1,11 @@
 #ifndef COSTANTI_INCLUSA
 #define COSTANTI_INCLUSA
 #include "netinet/in.h"
+
+// testo colorato
+#define ANSI_RESET "\033[0m"
+#define ANSI_GREEN "\033[0;32m"
+
 // costanti
 #define MAX_PLAYERS 2		// numero massimo di giocatori per room
 #define MAX_TENTATIVI 3		// numero massimo di tentativi per fare login
@@ -38,11 +43,30 @@
 #define INVIA_MESSAGGIO 0x0A	// messaggio per invaire il messaggio
 #define RICEVI_MESSAGGIO 0x0B	// messaggio per ricevere un messaggio
 
+// costanti relative alle room
+#define MAX_LOCAZIONI 5
+#define MAX_OGGETTI 10
+#define MAX_RICETTE 10
+#define MAX_TOKEN 1		// numero di token per vincere
+
+// costanti relative ai player
+#define INVENTARIO 5		// dimensione dell'inventario
+
+// status degli oggetti
+#define FREE 0x00		// oggetto raccoglibile
+#define BLOCCATO 0x01		// oggetto bloccato da enigma
+#define TAKEN 0x02		// oggetto nell'inventario di un player
+#define HIDDEN 0x03		// oggetto nascosto
+
+// regole delle ricette
+#define GIVE 0x01		// oggetto HIDDEN -> TAKEN
+#define UNLOCK 0x02		// oggetto HIDDEN -> FREE
+#define TOKEN 0x03		// oggetto TOKEN
+
 typedef uint8_t natb;
 typedef uint16_t natw;
 typedef uint32_t natl;
 typedef uint64_t natq;
-
 
 #endif
 

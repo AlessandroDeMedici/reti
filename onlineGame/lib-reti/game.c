@@ -44,7 +44,7 @@ void inviaMessaggio(int id,int sd)
 	// controllo se posso inviare, altrimenti invio un NOK
 	// questo e' il raro caso in cui il server soddisfi due richieste di tell allo stesso
 	// ciclo, in questo caso il messaggio dalla seconda richiesta in poi vengono scartati
-	if (now){
+	if (buffer_id){
 		ret = send(sd,&opcode,sizeof(opcode),0);
 		if (!ret)
 			perror("inviaMessaggio - errore in fase di send");
@@ -78,6 +78,7 @@ void riceviMessaggio(int sd)
 {
 	natl len = 0;
 	int ret = 0;
+	int i;
 	natb pid = getPlayerId(sd);
 	if (buffer[0] != '\0' && (!sent[pid])){
 		// deve essere presente una stringa e non deve essere gia stata inviata a questo player
@@ -89,6 +90,13 @@ void riceviMessaggio(int sd)
 		ret = send(sd,&len,sizeof(len),0);
 		if (!ret)
 			perror("riceviMessaggio - errore in fase di invio");
+	}
+	// libero buffer_id
+	for (i = 0; i < MAX_PLAYERS; i++){
+		if (!sent[i])
+			break;
+		if (i == MAX_PLAYERS - 1)
+			buffer_id = 0;
 	}
 }
 
@@ -394,6 +402,7 @@ void riceviMessaggio()
 	}
 
 	ret = recv(sd,buffer,len,0);
+	printf("\t\t");
 	stampaAnimata(buffer);
 	printf("\n");
 }
@@ -742,7 +751,6 @@ void game()
 		printf("> ");
 		fgets(buffer,127,stdin);
 
-
 		// prima di eseguire il comando controllo il tempo
 		// controllo sul tempo
 		if (controllaTempo()){
@@ -753,14 +761,6 @@ void game()
 		
 		// controllo se sono presenti messaggi
 		riceviMessaggio();
-
-		// controllo sui token (vinto)
-		getToken();
-		if (gioco.token == MAX_TOKEN){
-			win();
-			quitRoom();
-			break;
-		}
 		
 		for (i = 0; i < 128; i++){
 			if (buffer[i] == '\n'){
@@ -772,8 +772,7 @@ void game()
 		command = strtok(buffer," ");
 	
 		if (!command){
-			printf("\033[A\r\033[K");
-			continue;
+			;
 		}
 		else if (!strcmp(command,"exit")){
 			quitRoom();
@@ -801,9 +800,19 @@ void game()
 		else if (!strcmp(command,"tell")){
 			arg1 = strtok(NULL,"");
 			inviaMessaggio(arg1);
+		} else if (!strcmp(command,"help")){
+			printHelp();
 		}
 		else 
 			printf("\033[A\r\033[K");
+		
+		// controllo sui token (vinto)
+		getToken();
+		if (gioco.token == MAX_TOKEN){
+			win();
+			quitRoom();
+			break;
+		}
 	}
 }
 
