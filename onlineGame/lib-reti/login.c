@@ -1,7 +1,8 @@
 #include "login.h"
+
 // descrizione:
-// funzione che dati username e password prepara inserisce la stringa "username;password\0" da inviare
-// in fase di login o registrazione
+// funzione che dati username e password inserisce la stringa "username;password\0" in buffer.
+// Questa stringa verra usata in fase di registrazione
 // argomenti:
 // buffer -> array di caratteri dove verra scritto "username;password\0"
 // username -> array di caratteri dove verra scritto lo username
@@ -44,8 +45,8 @@ void demakeStringaLogin(char * buffer, char * username, char * password)
 // username -> stringa che contiene lo username
 // password -> stringa che contiene la password
 // ritorno:
-// la funzione ritorna 0 in caso di successo
-// 1 in caso di disconnessione del ricevente o di errore
+// la funzione ritorna 0 in caso di successo,
+// 1 in caso di disconnessione o di errore
 size_t inviaLogin(int sd,char * username, char * password)
 {
 	char buffer[100];
@@ -67,8 +68,8 @@ size_t inviaLogin(int sd,char * username, char * password)
 // username -> array dove verra scritto lo username
 // password -> array dove verra scritta la password
 // ritorno:
-// la funzione ritorna 0 in caso di successo
-// 1 in caso di disconnessione del ricevente o di errore
+// la funzione ritorna 0 in caso di successo,
+// 1 in caso di disconnessione o di errore
 size_t riceviLogin(int sd, char * username, char * password)
 {
 	char buffer[100];
@@ -93,8 +94,8 @@ size_t riceviLogin(int sd, char * username, char * password)
 // username -> array di caratteri dove verra scritto lo username
 // password -> array di caratteri dove verra scritta la password
 // ritorno:
-// la funziona ritorna 0 in caso di successo
-// 1 in caso di disconnessione del ricevente o di errore
+// la funziona ritorna 0 in caso di successo,
+// 1 in caso di disconnessione o di errore
 size_t loginUtente(int sd, char * username, char * password)
 {
 	natl ret;
@@ -134,7 +135,7 @@ size_t loginUtente(int sd, char * username, char * password)
 // username -> array di caratteri nel quale verra scritto lo username
 // password -> array di caratteri nel quale verra scritta la password
 // ritorno:
-// la funzione ritorna un puntatore all'utente collegato in caso di successo
+// la funzione ritorna un puntatore all'utente collegato in caso di successo,
 // NULL in caso di errore
 struct user * loginServer(int sd,char * username, char * password)
 {
@@ -174,7 +175,7 @@ struct user * loginServer(int sd,char * username, char * password)
 // username -> array di caratteri nel quale verra scritto lo username
 // password -> array di caratteri nel quale verra scritta la password
 // ritorno:
-// la funzione ritorna 0 in caso di successo
+// la funzione ritorna 0 in caso di successo,
 // 1 in caso di errore o disconnessione del server
 size_t registerUtente(int sd, char * username, char * password)
 {	
@@ -205,7 +206,7 @@ size_t registerUtente(int sd, char * username, char * password)
 // password -> array di caratteri nel quale verra scritta la password
 // ritorno:
 // la funzione ritorna un puntatore all'utente colleggato (appena registrato)
-// in caso di successo NULL in caso di errore o di disconnessione del client
+// in caso di successo, NULL in caso di errore o di disconnessione del client
 struct user * registerServer(int sd, char * username, char * password)
 {
 	natb opcode = OK;
@@ -215,7 +216,7 @@ struct user * registerServer(int sd, char * username, char * password)
 	if (riceviLogin(sd,username,password))
 		return NULL; 	// il client si e' disconnesso
 	// creo un nuovo utente con queste credenziali
-	new_user = controllaUsername(username,password);
+	new_user = controllaUsername(username);
 	if (new_user){		// era gia presente un utente con lo stesso username
 		opcode = NOK;
 		ret = send(sd,&opcode,sizeof(opcode),0); // invio il messaggio di NOK

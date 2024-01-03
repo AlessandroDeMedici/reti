@@ -18,9 +18,13 @@
 #define PLAYING 0x02		// status del giocatore che sta giocando (gestito dalla room)	
 
 // status della room
-#define CREATED 0x00		// status della room creata, i giocatori stanno joinando
+#define CREATED 0x00		// status della room creata, i giocatori stanno entrando
 #define STARTED 0x01		// status della room in cui i giocatori stanno giocando e non e' piu possibile entrare
 #define QUITTING 0x01		// status della room terminata, i giocatori stanno uscendo
+
+// opcodes (messaggi) - generic
+#define OK 0xFA			// messaggio di ok
+#define NOK 0xAF		// messaggio di non ok
 
 // opcodes (messaggi) - home
 #define LOGIN 0x01		// messaggio di login
@@ -28,8 +32,6 @@
 #define LOGOUT 0x02		// messaggio di logout
 #define START_ROOM 0xFF		// messaggio di start room
 #define ROOM_LIST 0xBF		// messaggio di richiesta della lista delle rooms
-#define OK 0xFA			// messaggio di ok
-#define NOK 0xAF		// messaggio di non ok
 
 // opcodes (messaggi) - room
 #define QUIT_ROOM 0x08		// messaggio di uscita dalla room
@@ -40,13 +42,13 @@
 #define UPDATE_TOKEN 0x05	// messaggio di update del numero dei token
 #define INC_TOKEN 0x06		// messaggio di incremento del numero di token
 #define GET_TIME 0x07		// messaggio per ottenere lo start time del gioco
-#define INVIA_MESSAGGIO 0x0A	// messaggio per invaire il messaggio
-#define RICEVI_MESSAGGIO 0x0B	// messaggio per ricevere un messaggio
+#define INVIA_MESSAGGIO 0x0A	// messaggio per il comando di tell
+#define RICEVI_MESSAGGIO 0x0B	// messaggio per ricevere il tell
 
 // costanti relative alle room
-#define MAX_LOCAZIONI 5
-#define MAX_OGGETTI 10
-#define MAX_RICETTE 10
+#define MAX_LOCAZIONI 5		// numero massimo di locazioni per room
+#define MAX_OGGETTI 10		// numero massimo di oggetti per locazione
+#define MAX_RICETTE 10		// numero massimo di ricette per room
 #define MAX_TOKEN 1		// numero di token per vincere
 
 // costanti relative ai player
@@ -59,9 +61,9 @@
 #define HIDDEN 0x03		// oggetto nascosto
 
 // regole delle ricette
-#define GIVE 0x01		// oggetto HIDDEN -> TAKEN
-#define UNLOCK 0x02		// oggetto HIDDEN -> FREE
-#define TOKEN 0x03		// oggetto TOKEN
+#define GIVE 0x01		// oggetto HIDDEN -> TAKEN, il giocatore ottiene un oggetto
+#define UNLOCK 0x02		// oggetto HIDDEN -> FREE, viene sbloccato un oggetto
+#define TOKEN 0x03		// oggetto TOKEN, si ottiene un token
 
 typedef uint8_t natb;
 typedef uint16_t natw;

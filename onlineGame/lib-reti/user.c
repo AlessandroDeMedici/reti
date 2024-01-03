@@ -4,7 +4,11 @@
 // lista globale di utenti
 struct user * utenti = 0;
 
-// funzione che aggiunge una nuova connessione
+// descrizione:
+// funzione che aggiunge un nuovo utente e ritorna un puntatore a questo
+// argomenti:
+// username -> array di caratteri che contiene lo username
+// password -> array di caratteri cheh contiene la password
 struct user * nuovoUtente(char * username, char * password)
 {
 	// devo controllare che non sia gia presente lo stesso user
@@ -12,7 +16,7 @@ struct user * nuovoUtente(char * username, char * password)
 	struct user * new_user = (struct user *)malloc(sizeof(struct user));
 	// eventuale gestione dell'errore
 	if (!new_user){
-		;
+		return NULL;
 	}
 
 	// inizializzazione della nuova struttura
@@ -25,7 +29,12 @@ struct user * nuovoUtente(char * username, char * password)
 	return new_user;
  }
 
-// funzione che controlla che le credenziali siano corrette
+// descrizione:
+// funzione che ritorna un puntatore ad un utente se username e password
+// coincidono, null altrimenti
+// argomenti:
+// username -> array di caratteri che contiene lo username
+// password -> array di caratteri che contiene la password
 struct user * controllaUtente(char * username, char * password)
 {
 	struct user * p = utenti;
@@ -44,8 +53,12 @@ struct user * controllaUtente(char * username, char * password)
 	return 0;		// username non trovato
 }
 
-
-struct user * controllaUsername(char * username, char * password)
+// descrizione:
+// funzione che ritorna un puntatore ad un utente se solo lo username
+// coincide, null altrimenti
+// argomenti:
+// username -> array di caratteri che contiene lo username
+struct user * controllaUsername(char * username)
 {
 	struct user * p = utenti;
 	while (p){

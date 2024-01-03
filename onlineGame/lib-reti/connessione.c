@@ -1,10 +1,13 @@
 // connessione.c
 #include "connessione.h"
 
-// lista delle connessioni attualmente attive
+// lista globale delle connessioni attualmente attive
 struct des_connection * connessioni = 0;
 
-// funzione che aggiunge una nuova connessione
+// descrizione:
+// funzione che aggiunge una nuova connessione alla lista
+// argomenti:
+// sd -> descrittore del socket della connessione
 struct des_connection * nuovaConnessione(int sd)
 {
 	struct des_connection * new_conn = (struct des_connection *)malloc(sizeof(struct des_connection));
@@ -36,8 +39,10 @@ struct des_connection * nuovaConnessione(int sd)
 	return new_conn;
 }
 
-// restituisce il puntatore al descrittore di connessione dato
-// il socket descriptor
+// descrizione:
+// restituisce il puntatore al descrittore di connessione dato il socket descriptor
+// argomenti:
+// sd -> descrittore del socket della connessione
 struct des_connection * getConnessione(int sd)
 {
 	struct des_connection * p = connessioni;
@@ -50,7 +55,12 @@ struct des_connection * getConnessione(int sd)
 	return NULL;
 }
 
+// descrizione:
 // funzione che chiude la connessione dato il socket
+// argomenti:
+// sd -> descrittore del socket della connessione
+// ritorno:
+// ritorna 0 in caso di successo
 size_t chiudiConnessione(int sd)
 {
 	// elimino un elemento dalla lista con la tecnica dei due puntatori
@@ -72,7 +82,13 @@ size_t chiudiConnessione(int sd)
 	return 0;
  }
 
+// descrizione:
 // modifica lo stato della connessione in logged e lega la connessione ad un utente
+// argomenti:
+// connessione -> puntatore al descrittore di connessione da modificare
+// utente -> puntatore all'utente che e' appena acceduto
+// ritorno:
+// ritorna 0 in caso di successo, 1 altrimenti
 size_t loginConnessione(struct des_connection *connessione,struct user *utente)
 {
 	// controllo sugli input
@@ -84,7 +100,12 @@ size_t loginConnessione(struct des_connection *connessione,struct user *utente)
 	return 0;
 }
 
-// modifica lo status della connessione in playing
+// descrizione:
+// modifica lo status della connessione in playing (il player si trova in una room)
+// argomenti:
+// sd -> socket descriptor della connessione
+// ritorno:
+// ritorna 0 in caso di successo, 1 altrimenti
 size_t playingConnessione(int sd)
 {
 	struct des_connection * p = getConnessione(sd);
@@ -94,7 +115,12 @@ size_t playingConnessione(int sd)
 	return 0;
 }
 
-// modifica lo status della connessione in logged
+// descrizione:
+// modifica lo status della connessione in logged (il player si trova nella home)
+// argomenti:
+// sd -> socket descriptor della connessione
+// ritorno:
+// ritorna 0 in caso di successo, 1 altrimenti
 size_t homeConnessione(int sd)
 {
 	struct des_connection * p = getConnessione(sd);
@@ -104,18 +130,11 @@ size_t homeConnessione(int sd)
 	return 0;
 }
 
-// modifica lo status della connessione in not_logged
-size_t logoutConnessione(int sd)
-{
-	struct des_connection * p = getConnessione(sd);
-	if (!p)
-		return 1;
-	p->status = NOT_LOGGED;
-	return 0;
-}
-
+// descrizione:
+// funzione che ritorna 1 nel caso in cui non ci sia nessuna connessione attiva, 0 altrimenti
 size_t nessunaConnessione()
 {
+	// non ci sono connessioni quando la lista di connessioni attive e' vuota
 	if (!connessioni)
 		return 1;
 	return 0;

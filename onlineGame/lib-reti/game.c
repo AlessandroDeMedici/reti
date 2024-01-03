@@ -1,24 +1,31 @@
 #include "game.h"
 
 struct room stanza;	// struttura globale room
-struct game gioco;	// struttura globale oggetti
-struct oggetto oggetti[MAX_OGGETTI];
-struct location locazioni[MAX_LOCAZIONI];
-struct ricetta ricette[MAX_RICETTE];
+struct game gioco;	// struttura globale gioco
+struct oggetto oggetti[MAX_OGGETTI]; // struttura globale oggetti
+struct location locazioni[MAX_LOCAZIONI]; // strutture globale locazioni
+struct ricetta ricette[MAX_RICETTE]; // struttura globale ricette
 
-
-char buffer[1024];	// buffer globale messaggio
-natb buffer_id = 0;	// id del player che ha inviato il messaggio
-			// 0 se non e' presente
+// strutture per gestire i messaggi
+char buffer[1024]; // buffer globale messaggio
+natb buffer_id = 0xFF; // id del player che ha inviato il messaggio (0xFF se non presente)
 natb sent[MAX_PLAYERS];	// giocatori a cui e' stato inviato il messaggio
 natb now = 0;
 
 #ifdef SERVER
 // codice del server
-int indice = 0;
 
+// i giocatori vengono gestiti tramite una pila grande MAX_PLAYERS
+// con indice la variabile indice
+
+int indice = 0; // indice della prima locazione libera in giocatori
+
+// pila di giocatori
 struct player giocatori[MAX_PLAYERS];
 
+// descrizione:
+// funzione chiamata dal server per inserire 
+// un nuovo player all'interno della pila
 void addPlayer(char * username, int sd)
 {
 	if (indice >= MAX_PLAYERS)
@@ -44,7 +51,7 @@ void inviaMessaggio(int id,int sd)
 	// controllo se posso inviare, altrimenti invio un NOK
 	// questo e' il raro caso in cui il server soddisfi due richieste di tell allo stesso
 	// ciclo, in questo caso il messaggio dalla seconda richiesta in poi vengono scartati
-	if (buffer_id){
+	if (buffer_id != 0xFF){
 		ret = send(sd,&opcode,sizeof(opcode),0);
 		if (!ret)
 			perror("inviaMessaggio - errore in fase di send");
@@ -96,11 +103,15 @@ void riceviMessaggio(int sd)
 		if (!sent[i])
 			break;
 		if (i == MAX_PLAYERS - 1)
-			buffer_id = 0;
+			buffer_id = 0xFF;
 	}
 }
 
-// funzione chiamata dal server per rispondere alla richiesta di aggiornamento dell'oggetto
+// descrizione:
+// funzione chiamata dal server per rispondere 
+// alla richiesta di aggiornamento dell'oggetto
+// argomenti:
+// sd -> descrittore del socket
 void aggiornaOggetto(int sd)
 {
 	natb id = 0;
@@ -112,7 +123,11 @@ void aggiornaOggetto(int sd)
 	send(sd,&o->status,sizeof(o->status), 0);
 }
 
-// funzione chiamata dal server per sbloccare l'oggetto o
+// descrizione:
+// funzione chiamata dal server per rispondere
+// alla richiesta di UNLOCK di un oggetto
+// argomenti:
+// sd -> descrittore del socket
 void sbloccaOggetto(int sd)
 {
 	natb id = 0;
@@ -124,8 +139,11 @@ void sbloccaOggetto(int sd)
 	o->status = FREE;
 }
 
-// funzione chiamata dal server per ottenere la modifica di
-// un oggetto
+// descrizione:
+// funzione chiamata dal server per rispondere
+// alla richiesta di TAKE
+// argomenti:
+// sd -> descrittore del socket
 void ottieniOggetto(int sd)
 { 
 	natb id = 0;
@@ -143,8 +161,14 @@ void ottieniOggetto(int sd)
 	o->status = TAKEN;
 }
 
+// descrizione:
 // funzione che ritorna l'indice del player dato il suo
 // socket descriptor
+// argomenti:
+// sd -> socket descriptor del player
+// ritorno:
+// la funzione ritorna l'id del player in caso di successo,
+// 0xFF altrimenti
 natb getPlayerId(int sd)
 {
 	natb id = 0;
@@ -159,7 +183,15 @@ natb getPlayerId(int sd)
 	return 0xFF;
 }
 
+// descrizione:
 // trova nell'inventario del player id l'oggetto di nome c
+// e ritorna un puntatore all'oggetto
+// argomenti:
+// id -> id del player
+// c -> stringa che contiene il nome dell'oggetto
+// ritorno:
+// la funzione ritorna un puntatore all'oggetto in caso di successo,
+// NULL altrimenti
 struct oggetto * findOggettoInventario(natl id,char * c)
 {
 	int i;
@@ -175,7 +207,13 @@ struct oggetto * findOggettoInventario(natl id,char * c)
 	return NULL;
 }
 
-// rimuove l'oggetto o dall'inventario del giocatore id
+
+// descrizione:
+// funzione chiamata dal server per
+// rimuovere l'oggetto o dall'inventario del giocatore id
+// argomenti:
+// id -> id del player
+// o -> puntatore all'oggetto da rimuovere
 void rimuoviInventario(natb id,struct oggetto * o)
 {
 	int i;
@@ -187,7 +225,13 @@ void rimuoviInventario(natb id,struct oggetto * o)
 	}
  }
 
-// aggiunge l'oggetto o all'inventario del giocatore id
+
+// descrizione:
+// funzione chiamata dal server per
+// aggiungere l'oggetto o all'inventario del giocatore id
+// argomenti:
+// id -> id del player
+// o -> puntatore all'oggetto da aggiungere
 size_t aggiungiInventario(natb id,struct oggetto * o)
 {
 	int i;
@@ -203,24 +247,34 @@ size_t aggiungiInventario(natb id,struct oggetto * o)
 	return 1;
 } 
 
+// descrizione:
+// funzione chiamata dal server per rispondere
+// alla richiesta di use
+// argomenti:
+// sd -> descrittore del socket
 void usaOggetto(int sd)
 {
 	natb id1, id2 = 0xFF, pid;
 	struct ricetta * r = NULL;
 	struct oggetto * o1, * o2 = NULL;
-	// ricevo gli oggetti
+	
+	// ricevo gli id degli oggetti
 	recv(sd,&id1,sizeof(id1),0);
 	recv(sd,&id2,sizeof(id2),0);
 	
+	// ottengo i puntatori agli oggetti
 	o1 = &oggetti[id1];
 	if (id2 != 0xFF)
+		// alcune ricette prevedono che ci sia un solo oggetto come argomento
 		o2 = &oggetti[id2];
 
 	// ottengo il player id
 	pid = getPlayerId(sd);
 	
-	// supponiamo che la use abbia funzionato correttamente
 	r = findRicetta(o1,o2);
+	// compio l'azione
+	// non viene inviato un messaggio di OK o NOK perche' l'azione viene validata
+	// prima di essere inviata
 	switch(r->action){
 		case (GIVE):
 			rimuoviInventario(pid,o1);
@@ -237,7 +291,11 @@ void usaOggetto(int sd)
 	}
 }
 
-// stampa tutti gli oggetti nell'inventario del giocatore
+// descrizione:
+// funzione per stampare tutti gli oggetti
+// nell'inventario di un giocatore
+// argomenti:
+// sd -> descrittore del socket del player
 void objs(int sd)
 {
 	
@@ -253,7 +311,11 @@ void objs(int sd)
 	}
 }
 
-// funzione che elabora le richieste dei client
+// descrizione:
+// funzione che dato l'opcode elabora la richiesta del client
+// argomenti:
+// id -> descrittore del socket
+// opcode -> opcode ricevuto
 void game(int id, int sd, natb opcode)
 {
 	switch (opcode){
@@ -296,38 +358,48 @@ void game(int id, int sd, natb opcode)
 	}	
 }
 
+// descrizione:
 // funzione per sbloccare i player per iniziare a giocare
 void sbloccaPlayers()
 {
 	int i;
 	natb opcode = OK;
+
+	// ricordiamo che quando i client fanno avviaRoom rimangono
+	// in attesa di un messaggio
+	// quando la room e' piena tutti i giocatori ricevono un messaggio di OK
 	for (i = 0; i < MAX_PLAYERS; i++)
 		if (giocatori[i].p)
 			send(giocatori[i].sd,&opcode,sizeof(opcode),0);
 }
 
-// funzione lanciata dal server per inviare il numero
-// di token attuali
+// descrizione:
+// funzione lanciata dal server per rispondere alla richiesta di UPDATE_TOKEN
+// argomenti:
+// sd -> descrittore del socket
 void getToken(int sd)
 {
 	send(sd,&gioco.token,sizeof(gioco.token),0);
 }
 
-// funzione lanciata dal server per incrementare il numero
-// di token
+// descrizione:
+// funzione lanciata dal server per rispondere alla richiesta di INC_TOKEN
 void token()
 {
 	gioco.token++;
 }
 
-// funzione lanciata dal server per scrivere lo start time
-// della partita
+// descrizione:
+// funzione lanciata dal server per impostare lo start time del gioco
 void startTime()
 {
 	time(&gioco.start_time);
 }
 
-// funzione lanciata dal server per inviare il tempo
+// descrizione:
+// funzione lanciata dal server per rispondere alla richiesta di GET_TIME
+// argomenti:
+// sd -> descrittore del socket
 void ottieniTempo(int sd)
 {
 	time_t start_time = gioco.start_time;
@@ -337,11 +409,19 @@ void ottieniTempo(int sd)
 	send(sd,&start_time,sizeof(start_time),0);
 }
 
+
+// descrizione:
+// funzione che libera tutti gli oggetti nell'inventario di un giocatore
+// che sta uscendo dalla room
+// argomenti:
+// sd -> descrittore del socket
 void quitRoom(int sd)
 {
 	int i;
+	// ottengo l'id del player
 	natb id = getPlayerId(sd);
 
+	// libero tutti gli oggetti
 	for (i = 0; i < INVENTARIO; i++){
 		if (giocatori[id].inventario[i])
 			giocatori[id].inventario[i]->status = FREE;
@@ -351,15 +431,24 @@ void quitRoom(int sd)
 #else
 // codice del client
 
-int sd;			// descrittore del server
+int sd;			// descrittore del server (globale)
 
+// descrizione:
+// funzione chiamata dal client per inizializzare il descrittore del server
+// argomenti:
+// sockd -> descrittore del socket del server
 void initsd(int sockd)
 {
 	sd = sockd;
 }
 
+// struttura globale del player (lato client)
 struct player giocatore;
 
+// descrizione:
+// funzione chiamata dal client per inviare una richiesta di INVIA_MESSAGGIO
+// argomenti:
+// arg -> stringa che contiene il messaggio da inviare
 void inviaMessaggio(char * arg)
 {
 	// invio opcode
@@ -384,6 +473,9 @@ void inviaMessaggio(char * arg)
 	sendString(sd,arg);
 }
 
+
+// descrizione:
+// funzione chiamata dal client per inviare una richiesta di RICEVI_MESSAGGIO
 void riceviMessaggio()
 {
 	// invio opcode
@@ -394,21 +486,25 @@ void riceviMessaggio()
 		perror("riceviMessaggio - errore in fase di send");
 	}
 
-	// ricevo la stringa
+	// ricevo la lunghezza della stringa
 	ret = recv(sd,&len,sizeof(len),0);
 	len = ntohl(len);
 	if (!len){
+		// se la lunghezza e' nulla ritorno
 		return;
 	}
-
+	
+	// ricevo la stringa
 	ret = recv(sd,buffer,len,0);
 	printf("\t\t");
 	stampaAnimata(buffer);
 	printf("\n");
 }
 
-
-// funzione chiamata dal client per richiedere di aggiornare l'oggetto
+// descrizione:
+// funzione chiamata dal client per inviare una richiesta di UPDATE_OBJECT
+// argomenti:
+// o -> puntatore all'oggetto da aggiornare
 void aggiornaOggetto(struct oggetto * o)
 {
 	int ret;
@@ -416,30 +512,48 @@ void aggiornaOggetto(struct oggetto * o)
 	// si richiede lo status dell'oggetto
 	natb opcode = UPDATE_OBJECT;
 	natb id = getObjectId(o);
+	
 	// invio opcode
 	send(sd,&opcode,sizeof(opcode),0);
+	
 	// invio id dell'oggetto
 	send(sd,&id,sizeof(id),0);
+	
 	// ricezione dello status
 	ret = recv(sd,&o->status,sizeof(status),0);
+	
 	if (!ret) // disconnessione
 		printf("aggiornaOggetto - server disconnesso\n");
 } 
 
-// funzione che notifica il server che l'oggetto o e' stato 
-// sbloccato
+// descrizione:
+// funzione chiamata dal client per inviare una richiesta di UNLOCK
+// argomenti:
+// o -> puntatore all'oggetto da sbloccare
 void sbloccaOggetto(struct oggetto * o)
 {
 	natb id = getObjectId(o);
 	natb opcode = UNLOCK;
+	int ret;
 
 	// invio opcode
-	send(sd,&opcode,sizeof(opcode),0);
+	ret = send(sd,&opcode,sizeof(opcode),0);
+	if (!ret){
+		perror("sbloccaOggetto - errore in fase di send");
+		return;
+	}
 	// invio id
-	send(sd,&id,sizeof(id),0);
+	ret = send(sd,&id,sizeof(id),0);
+	if (!ret){
+		perror("sbloccaOggetto - errore in fase di send");
+		return;
+	}
 }
 
-// notifica al server di aver preso l'oggetto di id id
+// descrizione:
+// funzione chiamata dal client per inviare una richiesta di TAKE
+// argomenti:
+// o -> puntatore all'oggetto da ottenere
 void ottieniOggetto(struct oggetto * o)
 {
 	natb id = getObjectId(o);
@@ -451,7 +565,15 @@ void ottieniOggetto(struct oggetto * o)
 	send(sd,&id,sizeof(id),0);
 }
 
-// trova nell'inventario del player l'oggetto di nome c
+
+// descrizione:
+// funzione chiamata dal client per trovare all'interno dell'inventario
+// l'oggetto di nome c
+// argomenti:
+// c -> stringa che contiene il nome dell'oggetto
+// ritorno:
+// la funzione ritorna un puntatore all'oggetto in caso di successo,
+// NULL altrimenti
 struct oggetto * findOggettoInventario(char * c)
 {
 	int i;
@@ -467,6 +589,10 @@ struct oggetto * findOggettoInventario(char * c)
 	return NULL;
 }
 
+// descrizione:
+// funzione chiamata dal client per elaborare il comando di look
+// argomenti:
+// c -> stringa che contiene l'argomento (NULL, nome di location o di oggetto)
 void look(char * c)
 {
 	struct location * l;
@@ -478,15 +604,15 @@ void look(char * c)
 		return;
 	}
 
-	// find location
-	
+	// cerchiamo un nome di location
 	l = findLocation(c);
 	if (l){
 		stampaLocation(l);
 		return;
 	}
 
-	// se l'oggetto e' nell'inventario non ho bisogno di aggiornare niente
+	// cerchiamo infine un nome di oggetto, diamo precedenza agli oggetti
+	// nell'inventario (non ho bisogno di aggiornarli prima di stamparli)
 	o = findOggettoInventario(c);
 	if (o){
 		stampaOggetto(o);
@@ -500,6 +626,7 @@ void look(char * c)
 		return;
 	}
 	
+	// aggiorno lo stato dell'oggetto
 	aggiornaOggetto(o);
 
 	// se l'oggetto e' HIDDEN l'oggetto non viene trovato
@@ -507,6 +634,7 @@ void look(char * c)
 		o = NULL;
 
 	if (o){
+		// stampo la descrizione dell'oggetto
 		stampaOggetto(o);
 		return;
 	}
@@ -515,8 +643,13 @@ void look(char * c)
 
 }
 
+// descrizione:
+// funzione chiamata dal client per elaborare il comando di take
+// argomenti:
+// c -> stringa che contiene l'argomento (nome di oggetto)
 void take(char *c)
 {
+	// controllo sugli input
 	if (!c){
 		printf("take - bad argument\n");
 		return;
@@ -525,21 +658,27 @@ void take(char *c)
 	// provo ad ottenere l'oggetto
 	struct oggetto * o = findOggetto(c);
 	if (!o){
+		// oggetto non trovato
 		printf("take - non-existing object\n");
 		return;
 	}
+	
+	// se trovo l'oggetto devo prima aggiornarne lo status
 	aggiornaOggetto(o);
 	
+	// se e' HIDDEN non posso trovarlo
 	if (o->status == HIDDEN)
 		o = NULL;
 	
-	if (!o){ // oggetto non trovato
+	if (!o){
+		// oggetto non trovato
 		printf("take - non-existing object\n");
 		return;
 	}
 
 	// se l'oggetto e' gia' stato preso non posso 
-	// prenderlo
+	// prenderlo nuovamente (questo funziona anche se il player
+	// prova a prendere un oggetto che gia possiede)
 	if (o->status == TAKEN)
 	{
 		printf("L'oggetto e' gia stato preso\n");
@@ -559,6 +698,16 @@ void take(char *c)
 
 }
 
+
+// descrizione:
+// funzione chiamata dal client che si occupa di gestire la risoluzione
+// dell'enigma
+// argomenti:
+// o -> puntatore all'oggetto da sbloccare
+// ritorno:
+// la funzione ritorna 0 se l'utente e' riuscito a risolvere l'enigma
+// e sbloccare l'oggetto
+// 1 altrimenti
 size_t sblocca(struct oggetto * o)
 {
 	char buffer[64];
@@ -586,10 +735,16 @@ size_t sblocca(struct oggetto * o)
 	}
 }
 
+// descrizione:
+// funzione chiamata dal client che si occupa di gestire l'ottenimento di un oggetto
+// argomenti:
+// o -> puntatore all'oggetto che si vuole ottenere
 void ottieni(struct oggetto * o)
 {
 	int i;	
 	for (i = 0; i < INVENTARIO; i++){
+		// se trovo uno slot libero nell'inventario
+		// allora ci inserisco l'oggetto
 		if (giocatore.inventario[i])
 			continue;
 		giocatore.inventario[i] = o;
@@ -597,9 +752,16 @@ void ottieni(struct oggetto * o)
 		ottieniOggetto(o);
 		return;
 	}
+	// non c'erano slot liberi
 	printf("Inventario pieno!\n");
 }
 
+
+// descrizione:
+// funzione chiamata dal client per rimuovere un oggetto
+// dal proprio inventario
+// argomenti:
+// o -> puntatore all'oggetto da rimuovere dall'inventario
 void rimuoviInventario(struct oggetto * o)
 {
 	int i;
@@ -611,6 +773,11 @@ void rimuoviInventario(struct oggetto * o)
 	}
 }
 
+// descrizione:
+// funzione chiamata dal client per aggiungere un oggetto
+// al proprio inventario
+// argomenti:
+// o -> puntatore all'oggetto da aggiungere all'inventario
 size_t aggiungiInventario(struct oggetto * o)
 {
 	int i;
@@ -626,9 +793,16 @@ size_t aggiungiInventario(struct oggetto * o)
 	return 1;
 } 
 
+// descrizione:
+// funzione chiamata dal client per inviare una richiesta di USE al server
+// (questa viene chiamata solo dopo che e' stata trovata una ricetta adeguata)
+// argomenti:
+// o1 -> puntatore al primo oggetto della ricetta
+// o2 -> puntatore al secondo oggetto della ricetta
 void usaOggetto(struct oggetto * o1, struct oggetto * o2)
 {
 	natb id1, id2 = 0xFF, opcode = TAKE;
+	// ottengo gli id degli oggetti
 	id1 = getObjectId(o1);
 	if (o2)
 		id2 = getObjectId(o2);
@@ -636,11 +810,16 @@ void usaOggetto(struct oggetto * o1, struct oggetto * o2)
 	// invio opcode
 	send(sd,&opcode,sizeof(opcode),0);
 
-	// invio oggetti
+	// invio id degli oggetti
 	send(sd,&id1,sizeof(id1),0);
 	send(sd,&id2,sizeof(id2),0);
 }
 
+// descrizione:
+// funzione chiamata dal client per elaborare il comando di use
+// argomenti:
+// obj1 -> stringa che contiene il nome del primo oggetto
+// obj2 -> stringa che contiene il nome del secondo oggetto
 void use(char * obj1, char * obj2)
 {
 	struct oggetto * o1 = NULL, *o2 = NULL;
@@ -668,7 +847,7 @@ void use(char * obj1, char * obj2)
 		return;
 	}
 
-	// a questo punto sono sicuro che la ricetta esista
+	// a questo punto sono sicuro che la ricetta esiste
 	
 	// segnalo il comando al server
 	usaOggetto(o1,o2);
@@ -694,7 +873,9 @@ void use(char * obj1, char * obj2)
 	}
 }
 
-// stampa tutti gli oggetti nell'inventario
+// descrizione:
+// funzione lanciata dal client per stampare tutti gli oggetti nel
+// proprio inventario
 void objs()
 {
 	int i;
@@ -707,20 +888,9 @@ void objs()
 	}
 }
 
-void startRoomID(char * room)
-{
-	int rid;
-	natb opcode = START_ROOM;
-	sscanf(room,"%d",&rid);
-	rid = htonl(rid);
-	
-	// invio opcode
-	send(sd,&opcode,sizeof(opcode),0);
-
-	// invio room id
-	send(sd,&rid,sizeof(rid),0);
-}
-
+// descrizione:
+// funzione lanciata dal client per inviare un messaggio
+// di QUIT_ROOM
 void quitRoom()
 {
 	natb opcode = QUIT_ROOM;
@@ -731,7 +901,9 @@ void quitRoom()
 }
 
 
-// funzione lanciata dal client per gestire il gioco
+// descrizione:
+// funzione lanciata dal client per gestire
+// i comandi inviati durante il gioco
 void game()
 {
 	char buffer[1024];
@@ -744,8 +916,10 @@ void game()
 	gioco.token = 0;
 	ottieniTempo();
 
+	// stampo il menu di gioco
 	printHelp();
 
+	// eseguo un loop finche il gioco termina o il giocatore esce
 	while(1){
 		int i;
 		printf("> ");
@@ -772,7 +946,7 @@ void game()
 		command = strtok(buffer," ");
 	
 		if (!command){
-			;
+			; // non compio nessuna azione
 		}
 		else if (!strcmp(command,"exit")){
 			quitRoom();
@@ -816,11 +990,16 @@ void game()
 	}
 }
 
+// descrizione:
+// funzione che stampa una stringa di sconfitta
 void lose()
 {
 	printf("Tempo scaduto, hai perso!\n");
 }
 
+// descrizione:
+// funzione lanciata dal client per elaborare il comando
+// di time e stampare una stringa con il tempo rimanente
 void stampaTempo()
 {
 	time_t current_time;
@@ -832,27 +1011,33 @@ void stampaTempo()
 	printf("Tempo rimanente: %02d:%02d\n",remaining/60,remaining%60);
 }
 
+// descrizione:
 // funzione lanciata dal client per ottenere il numero aggiornato di token
 void getToken()
 {
 	natb opcode = UPDATE_TOKEN;
+	// invio opcode
 	send(sd,&opcode,sizeof(opcode),0);
+	// ricezione numero di token
 	recv(sd,&gioco.token,sizeof(gioco.token),0);
 }
 
-// funzione lanciata dal client per incrementare il numero di token del game
+// descrizione:
+// funzione lanciata dal client per inviare una richiesta di INC_TOKEN al server
 void token()
 {
 	natb opcode = INC_TOKEN;
+	// invio opcode
 	send(sd,&opcode,sizeof(opcode),0);
 }
 
-// funzione lanciata dal client per ottenere lo start_time
+// descrizione:
+// funzione chiamata dal client per ottenere lo start_time
 // del gioco
 void ottieniTempo()
 {
 	natb opcode = GET_TIME;
-	// invio il messaggio per ottenere lo start time
+	// invio opcode
 	send(sd,&opcode,sizeof(opcode),0);
 
 	// ottengo lo start_time
@@ -863,8 +1048,15 @@ void ottieniTempo()
 }
 
 #endif
+// codice comune
 
-// ritorna l'oggetto di nome c
+// descrizione:
+// funzione che dato il nome di un oggetto ritorna un puntatore all'oggetto
+// argomenti:
+// c -> stringa contenente il nome dell'oggetto
+// ritorno:
+// la funzione ritorna un puntatore all'oggetto in caso di sucesso,
+// NULL altrimenti
 struct oggetto * findOggetto(char * c)
 {
 	int i;
@@ -878,7 +1070,13 @@ struct oggetto * findOggetto(char * c)
 	return NULL;
 }
 
-// ritorna l'id dell'oggetto puntato da o
+// descrizione:
+// funzione che dato un puntatore ad un oggetto ne ritorna il suo id
+// argomenti:
+// o -> puntatore ad un oggetto
+// ritorno:
+// in caso di successo la funzione ritorna l'id dell'oggetto puntato da o,
+// NULL altrimenti
 natb getObjectId(struct oggetto * o)
 {
 	natb id = 0;
@@ -890,7 +1088,13 @@ natb getObjectId(struct oggetto * o)
 	return 0xFF;
 }
 
-// trova la location
+// descrizione:
+// funzione che ritorna un puntatore alla location dato il nome della location
+// argomenti:
+// c -> stringa contenente il nome della location
+// ritorno:
+// la funzione ritorna un puntatore alla location in caso di successo,
+// NULL altrimenti
 struct location * findLocation(char * c)
 {
 	int i;
@@ -903,7 +1107,14 @@ struct location * findLocation(char * c)
 	return NULL;	
 }
 
-// trova la ricetta dati gli oggetti
+// descrizione:
+// funzione che dati due oggetti ritorna la ricetta che contiene questi due argomenti
+// argomenti:
+// o1 -> puntatore al primo oggetto
+// o2 -> puntatore al secondo oggetto
+// ritorno:
+// la funzione ritorna un puntatore alla ricetta se e' presente una ricetta con argomenti
+// gli oggetti o1 ed o2 (ATTENZIONE: non conta l'ordine degli oggetti)
 struct ricetta * findRicetta(struct oggetto * o1, struct oggetto * o2)
 {
 	int i;
@@ -919,6 +1130,7 @@ struct ricetta * findRicetta(struct oggetto * o1, struct oggetto * o2)
 	return NULL;
 }
 
+// descrizione:
 // funzione per stampare la descrizione della room
 void stampaRoom()
 {
@@ -927,7 +1139,10 @@ void stampaRoom()
 	stampaAnimata(buffer);
 }
 
+// descrizione:
 // funzione per stampare la descrizione della location l
+// argomenti:
+// l -> puntatore alla location
 void stampaLocation(struct location * l)
 {
 	char buffer[512];
@@ -935,20 +1150,27 @@ void stampaLocation(struct location * l)
 	stampaAnimata(buffer);
 } 
 
+// descrizione:
 // funzione per stampare la descrizione dell'oggetto o
+// argomenti:
+// o -> puntatore all'oggetto
 void stampaOggetto(struct oggetto * o)
 {
 	char buffer[512];
-	// devo controllare se l'oggetto e' bloccato
 	if (o->status == BLOCCATO){
+		// se l'oggetto e' bloccato devo stampare la sua descrizione da bloccato
 		sprintf(buffer,"%s\n",o->descrizioneBloccato);
 		stampaAnimata(buffer);
 	} else {
+		// se l'oggetto e' libero devo stampare la sua descrizione
 		sprintf(buffer,"%s\n",o->descrizione);
 		stampaAnimata(buffer);
 	}
 } 
 
+// descrizione:
+// funzione chiamata dal client per stampare un piccolo messaggio di vittoria
+// ed attendere un input da parte del giocatore
 void win()
 {
 	printf("Hai vinto!\n");
@@ -956,7 +1178,12 @@ void win()
 	getchar();
 }
 
-// funzione per aggiungere una ricetta
+// descrizione:
+// funzione usata in fase di inizializzazione del game per aggiungere una ricetta
+// o1 -> puntatore al primo oggetto
+// o2 -> puntatore al secondo oggetto
+// dst -> puntatore all'oggetto di destinazione
+// action -> azione da compiere
 void aggiungiRicetta(struct oggetto * o1, struct oggetto * o2, struct oggetto * dst, char action)
 {
 	int i;
@@ -971,6 +1198,11 @@ void aggiungiRicetta(struct oggetto * o1, struct oggetto * o2, struct oggetto * 
 	}
 }
 
+
+// descrizione:
+// funzione usata per controllare il tempo rimanente nel gioco
+// ritorno:
+// la funzione ritorna 0 se rimane ancora tempo per giocare, 0 altrimenti
 int controllaTempo()
 {
 	time_t current_time;
@@ -982,7 +1214,11 @@ int controllaTempo()
 	return 0;
 }
 
-// funzione per inizializzare la prima room
+
+// per semplicita in questo progetto si ha un solo scenario di gioco inizializzato tramite funzione
+// e non caricato da file
+// descrizione:
+// funzione usata in fase di inizializzazione per inizializzare l'unico scenario di gioco
 void init()
 { 
 	memset(oggetti,0,sizeof(struct oggetto) * MAX_OGGETTI);
@@ -1054,4 +1290,5 @@ void init()
 	aggiungiRicetta(&oggetti[1],NULL,&oggetti[4],GIVE);
 	// se uso la chiave ottengo un token
 	aggiungiRicetta(&oggetti[4],NULL,NULL,TOKEN);
+
 }

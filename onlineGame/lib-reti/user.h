@@ -10,9 +10,8 @@ struct user
 	struct user * next;
 };
 
-// lista di tutti gli utenti
 struct user * nuovoUtente(char*, char*);
 struct user * controllaUtente(char*, char*);
-struct user * controllaUsername(char *,char*);
+struct user * controllaUsername(char *);
 
 #endif

@@ -1,6 +1,8 @@
 #include "menu.h"
 
 #ifdef SERVER
+// codice del server
+
 // descrizione:
 // funzione usata dal server per rispondere alla richiesta di roomList
 // argomenti:
@@ -8,13 +10,19 @@
 void roomList(int sd)
 {
 	char buffer[512];
-	if (!activeRooms(buffer))
+
+	if (!activeRooms(buffer)) // funzione definita in lib-reti/room.c
 		sendString(sd,buffer);
 	else
+		// se non sono attive stanze invio una stringa.
+		// un'ottimizzazione e' inviare una dimensione nulla della stringa
+		// e il client riconosce che non sono presenti stanze.
 		sendString(sd,"Nessuna stanza attiva\n");
 	printf("(Main) (%d) ha fatto roomList()\n",sd);
 }
 
+// descrizione:
+// funzione usata dal server per stampare il menu principale
 void printMenu()
 {
 	printf(ANSI_GREEN "***************** SERVER ESCAPE ROOM ****************\n" ANSI_RESET);
@@ -26,8 +34,10 @@ void printMenu()
 }
 
 #else
+// codice del client
+
 // descrizione:
-// funzione che stampa il menu mostrato in fase di login o di registrazione
+// funzione usata dal client per stampare il menu in fase di registrazione o accesso
 void printMenu()
 {
 	printf(ANSI_GREEN "******************** ESCAPE ROOM ********************\n" ANSI_RESET);
@@ -45,10 +55,14 @@ void roomList(int sd)
 {
 	natb opcode = ROOM_LIST;
 	char buffer[256];
+	
+	// invio opcode
 	int ret = send(sd,&opcode,sizeof(opcode),0);
 	if (ret <= 0)
 		// errore nell'invio dell'opcode
 		return;
+
+	// ricevo la stringa
 	receiveString(sd,buffer);
 	printf("LISTA DELLE ROOMS:\n%s",buffer);
 }
@@ -58,23 +72,40 @@ void roomList(int sd)
 // argomenti:
 // sd -> descrittore del socket
 // arg1 ->  stringa che contiene il room_id
+// ritorno:
+// ritorna 0 in caso di successo, 1 altrimenti
 size_t avviaRoom(int sd, char * arg1)
 {
 	natb opcode = START_ROOM;
 	natl room;
+	int ret;
+
 	// acquisisco il numero di room
 	sscanf(arg1,"%d",&room);
 
 	// invio il messaggio di START_ROOM
-	send(sd,&opcode,sizeof(opcode),0);
+	ret = send(sd,&opcode,sizeof(opcode),0);
+	if (!ret){
+		perror("avviaRoom - errore in fase di send");
+		return 1;
+	}
 
 	// invio il numero di room
 	room = htonl(room);
-	send(sd,&room,sizeof(room),0);
+	ret = send(sd,&room,sizeof(room),0);
+	if (!ret){
+		perror("avviaRoom - errore in fase di send");
+		return 1;
+	}
+
 
 	// attendo il messaggio di OK
 	printf("In attesa che gli altri giocatori entrino nella room %d...\n",htonl(room));
-	recv(sd,&opcode,sizeof(opcode),0);
+	ret = recv(sd,&opcode,sizeof(opcode),0);
+	if (!ret){
+		perror("avviaRoom - errore in fase di recv");
+		return 1;
+	}
 	if (opcode == OK){
 		printf("Benvenuto nella room!\n");
 		return 0;
@@ -84,7 +115,7 @@ size_t avviaRoom(int sd, char * arg1)
 #endif
 
 // descrizione:
-// funzione che stampa il menu in home page
+// funzione che stampa il main menu della home
 void printHome()
 {
 	printf(ANSI_GREEN "******************** ESCAPE ROOM ********************\n" ANSI_RESET);
@@ -96,7 +127,7 @@ void printHome()
 }
 
 // descrizione:
-// funzione che stampa il menu del gioco con tutti i comandi
+// funzione che stampa il menu di gioco
 void printHelp()
 {
 	printf(ANSI_GREEN "******************* Buona partita ******************\n" ANSI_RESET);

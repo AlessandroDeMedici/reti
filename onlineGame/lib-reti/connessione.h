@@ -16,7 +16,6 @@ struct des_connection
 struct des_connection * nuovaConnessione(int sd);
 size_t chiudiConnessione(int sd);
 size_t loginConnessione(struct des_connection *,struct user *);
-size_t logoutConnessione(int);
 size_t playingConnessione(int);
 size_t homeConnessione(int);
 struct des_connection * getConnessione(int);

@@ -1,11 +1,15 @@
 #include "room.h"
 
-// lista di rooms;
+// lista globale di rooms
 struct des_room * room = 0;
 
-extern fd_set master;
-
-// id corrisponde all'id della room
+// descrizione:
+// funzione che restituisce un puntatore al descrittore di room dato l'id
+// argomenti:
+// id -> id della room
+// ritorno:
+// la funzione ritorna un puntatore al descrittore di room se presente,
+// NULL altrimenti
 struct des_room * checkRoom(natl id)
 {
 	struct des_room * p = room;
@@ -17,11 +21,23 @@ struct des_room * checkRoom(natl id)
 	return NULL;			// room non presente
 }
 
+
+// descrizione:
+// funzione che crea un nuovo descrittore di room con room_id id
+// e lo inserisce nella lista di rooms
+// argomenti:
+// id -> id della room da creare
+// ritorno:
+// ritorna un puntatore al descrittore di room in caso di successo,
+// NULL altrimenti
 struct des_room * createRoom(natl id)
 { 
-	// inserimento in testa della nuova room
 	struct des_room * p = (struct des_room *)malloc(sizeof(struct des_room));
-	
+	if (!p){
+		perror("createRoom - memoria insufficiente");
+		return NULL;
+	}
+
 	// inizializzo la room (inserimento in testa alla lista)
 	memset(p,0,sizeof(struct des_room));
 	p->next = room;
@@ -31,18 +47,27 @@ struct des_room * createRoom(natl id)
 	p->numPlayers = 0;
 	p->status = CREATED;
 
+	// inserimento in testa della nuova room
 	room = p;
 
 	return p;
 }
 
+// descrizione:
+// funzione che elimina il descrittore di room con room_id id
+// argomenti:
+// id -> id della room da eliminare
+// ritorno:
+// la funzione ritorna 0 in caso di successo,
+// 1 nel caso in cui la room non sia stata trovata
 size_t closeRoom(natl id)
 {
+	// elimino il des_room con la tecnica dei due puntatori
 	struct des_room * p = room;
 	struct des_room * q = 0;
 	while (p){
 		if (p->id == id){
-			if (p == room){
+			if (!q){
 				room = p->next;
 			} else { 
 				q->next = p->next;
@@ -56,86 +81,55 @@ size_t closeRoom(natl id)
 	return 1;
 }
 
-// ATTENZIONE: dopo aver inviato sd alla room target bisogna
-// comunque rimuovere sd dall'fd_set master
-//size_t joinRoom(int sd, struct des_room * targetRoom)
-//{
-//	// invia sd alla room target
-//	// ritorna 0 in caso di successo
-//	// 1 altrimenti
-//
-//	int pf = targetRoom->pf[1];
-//	int ret, inviati = 0;
-//
-//	// controllo sul numero di numPlayers
-//	if (targetRoom->numPlayers == MAX_PLAYERS)
-//		return 1;
-//	while(inviati < sizeof(sd)){
-//		ret = write(pf,&sd,sizeof(sd));
-//		inviati += ret;
-//	}
-//	targetRoom->numPlayers++;
-//	return 0;
-//}
 
-
-// INIZIO-MODIFICHE:
-// queste modifiche sono state fatte perche' e' stato
-// riscontrato un problema nel codice:
-// 	la tabella dei file attivi di un processo
-// 	e' relativa al processo, i suoi sd non sono
-// 	gli stessi del processo padre, anche se ottiene
-// 	l'int relativo al socket descriptor.
-// 	per questo motivo PRIMA SI APRONO TUTTI I SOCKET 
-// 	DEI PLAYER DELLA ROOM e successivamente si fa la
-// 	fork().
-// 	NUOVI PLAYER NON POSSONO FARE JOIN DELLA ROOM
-// 	I PLAYER POSSONO COMUNQUE QUITTARE IN GAME 
-// 	(NON E' UN BUG)
-// nuova versione della join room che modifica soltanto il
-// descrittore, appena sono raggiunti i MAX_PLAYER player crea la room
-
-// funzione per inviare i player dal processo padre al processo figlio TRUE o dal processo figlio al processo padre FALSE, di default e' dal padre al figlio
+// descrizione:
+// funzione per inviare un file descriptor dalla home alla room quando padre vale TRUE
+// da room a padre quando padre vale FALSE
+// argomenti:
+// p -> puntatore al descrittore di room
+// sd -> socket descriptor da inviare
+// username -> stringa che contiene lo username
+// padre -> variabile logica per stabilire il verso dell'invio
+// ritorno:
+// ritorna 0 in caso di successo, 1 in caso di errore (ad esempio invio incompleto)
 size_t sendPlayer(struct des_room * p, int sd, char * username, char padre)
 {
 	int invio;
 	int len = strlen(username);
+	int ret;
+
+	if (!p)
+		return 1;
+
 	if (padre)
 		invio = p->pf[1];
 	else
 		invio = p->fp[1];
+
 	// effettua la scrittura
-	write(invio,&sd,sizeof(sd));
-	
+	ret = write(invio,&sd,sizeof(sd));
+	if (ret < sizeof(sd))
+		return 1;
+
 	// se mi trovo da padre a figlio devo inviare anche username
 	if (padre){
-		write(invio,&len,sizeof(int));
+		ret = write(invio,&len,sizeof(int));
+		if (ret < sizeof(int))
+			return 1;
 		write(invio,username,len);
+		if (ret < len)
+			return 1;
 	}
 
 	return 0;
 }
 
-int receivePlayer(struct des_room * p, char * username, char padre)
-{
-	int ricezione, sd, len;
-	if (padre)
-		ricezione = p->fp[0];
-	else
-		ricezione = p->pf[0];
-	// effettua la ricezione
-	read(ricezione,&sd,sizeof(sd));
-
-	// se sono il figlio devo anche ricevere lo username
-	if (!padre){
-		read(ricezione,&len,sizeof(int));
-		read(ricezione,username,len);
-	}
-
-	return sd;
-}
-
-// abbiamo raggiunto il numero di players necessari per avviare la room
+// descrizione:
+// funzione che crea il processo room
+// parametri:
+// p -> descrittore della room da avviare
+// ritorno:
+// la funzione ritorna 0 in caso di successo, 1 in caso di errore
 size_t startRoom(struct des_room * p)
 {
 	int i;
@@ -174,6 +168,15 @@ size_t startRoom(struct des_room * p)
 	return 0;
 }
 
+// descrizione:
+// funzione che si occupa di inviare i player nelle room
+// argomenti:
+// sd -> descrittore del socket da inviare alla room
+// u -> puntatore all'utente da inviare
+// p -> puntatore al descrittore della room
+// ritorno:
+// la funzione ritorna 0 in caso di successo,
+// 1 se non e' riuscita ad invaire il socket sd
 size_t joinRoom(int sd, struct user * u, struct des_room * p)
 {
 	// controllo sullo status della room
@@ -182,9 +185,12 @@ size_t joinRoom(int sd, struct user * u, struct des_room * p)
 	// controllo sul numero di giocatori
 	if (p->numPlayers == MAX_PLAYERS)
 		return 1;
+
+	// aggiungo il player al descrittore di room
 	p->players[p->numPlayers] = sd;
 	p->users[p->numPlayers] = u;
 	p->numPlayers++;
+
 	// se il numero di player ha raggiunto il numero di
 	// player massimi per la room allora la avvia
 	if (p->numPlayers == MAX_PLAYERS){
@@ -193,22 +199,14 @@ size_t joinRoom(int sd, struct user * u, struct des_room * p)
 	return 0;
 }
 
-// funzione che restituisce il sd uscito dalla room e da reinserire in fd_set master
-// per il momento supponiamo che se questo sd e' 0
-// allora il processo non ha piu giocatori e vuole chiudersi
-int backRoom(struct des_room * targetRoom)
-{
-	int sd, ret, ricevuti = 0;
-	int fp = targetRoom->fp[0];
-	while (ricevuti < sizeof(sd)){
-		ret = read(fp,&sd,sizeof(sd));
-		ricevuti += ret;
-	}
-	targetRoom->numPlayers--;
-	return sd;
-}
-
-// funzione che ritorna un puntatore al descrittore di room se il file descriptor e' di una pipe di una room
+// descrizione:
+// funzione che ritorna un puntatore al descrittore di room
+// se il fd e' un file descriptor della pipe di una room (fp[0])
+// argomenti:
+// fd -> indice del file descriptor
+// ritorno:
+// la funzione ritorna un puntatore al descrittore di room in caso di successo,
+// NULL altrimenti
 struct des_room * getRoom(natl fd)
 {
 	struct des_room * p = room;
@@ -220,7 +218,13 @@ struct des_room * getRoom(natl fd)
 	return NULL;
 }
 
+// descrizione:
 // funzione che scrive in buffer tutte le room attive in questo momento
+// argomenti:
+// buffer -> array di caratteri che conterra la stringa da inviare
+// ritorno:
+// la funzione ritorna 0 in caso di successo,
+// 1 nel caso non siano presenti room
 size_t activeRooms(char * buffer)
 {
 	struct des_room * p = room;
@@ -241,72 +245,122 @@ size_t activeRooms(char * buffer)
 	buffer[len] = '\0';
 	return 0;
 }
+
 #ifdef SERVER
-void avviaRoom(int sd, int max_sd, fd_set * master, struct des_room * stanza)
+// codice del server
+
+
+// descrizione:
+// funzione che si occupa di inviare i player nelle room e di aggiornare
+// fd_set master e descrittore di room
+// argomenti:
+// sd -> descrittore del socket da inviare alla room
+// max_sd -> indice del piu alto descrittore di socket in master
+// master -> fd_set da aggiornare
+void avviaRoom(int sd, int max_sd, fd_set * master)
 {
 	struct des_connection * conn = NULL;
 	int ret = 0;
 	natl room_id = 0;
 	natb opcode = NOK;
+	struct des_room * stanza;
+
 	// ottengo il descrittore di connessione
 	conn = getConnessione(sd);
 
 	// ricevo il room_id
 	ret = recv(sd,&room_id,sizeof(room_id),0);
+	if (!ret){
+		perror("avviaRoom - client disconnesso");
+		return;
+	}
 	room_id = ntohl(room_id);
 	printf("(Main) (%d) vuole entrare nella room (%d)\n",sd,room_id);
-	// entro nella room, se questa non esiste prima la creo
+
+	// ottengo il descrittore di room
 	stanza = checkRoom(room_id);
 
 	if (!stanza){
+		// la room non era presente, quindi devo crearla
 		stanza = createRoom(room_id);
 		printf("(Main) La room %d non esisteva, e' stata creata\n",room_id);
-		// se e' stata creata bisogna inserire fd della pipe in master
+		
+		// se e' stata creata bisogna inserire fp[0] della pipe in master
 		FD_SET(stanza->fp[0],master);
 		if (stanza->fp[0] > max_sd)
 			max_sd = stanza->fp[0];
+
 	} else {
+		// la room esisteva di gia
 		printf("(Main) La room %d esisteva\n",room_id);
 	}
+
+	// invio il socket sd nella room
 	ret = joinRoom(sd,conn->utente,stanza);
+
 	if (!ret){
+		// joinRoom ha ritornato 0 quindi sd e' stato inviato con successo
 		playingConnessione(sd);
 		printf("(Main) il socket (%d) e' entrato nella room (%d)\n",sd,room_id);
 		FD_CLR(sd,master);	
-	} else { // la room era piena
+	} else { 
+		// joinRoom ha ritornato 1 quindi non e' stato inviato alla room
 		printf("(Main) il socket (%d) non e' entrato nella room %d perche era piena\n",sd,room_id);
-		// invia un NOK
+		// in questo caso notifichiamo al client che non e' stato possibile entrare con un NOK
 		ret = send(sd,&opcode,sizeof(opcode),0);
+		if (!ret)
+			perror("avviaRoom - errore in fase di send");
 	}
 }
 
+// descrizione:
+// funzione che si occupa di ricevere i player che arrivano dalle room
+// ed aggiornare fd_set master e descrittore di room
+// argomenti:
+// sd -> file descriptor pronto (associato ad una pipe)
+// master -> fd_set da aggiornare
+// stanza -> descrittore di room da aggiornare
 void tornaIndietro(int sd, fd_set * master, struct des_room * stanza)
 {
 	// questo e' un fd relativo ad una pipe che ci sta inviando un socket indietro
 	int ricevuti = 0, back_sd = 0, ret = 0;
 	natl room_id = stanza->id;
+
+	// modifico lo stato della stanza
 	stanza->status = QUITTING;
+
+	// ricevo il socket descriptor
 	while(ricevuti < sizeof(back_sd)){
 		ret = read(sd,&back_sd + ricevuti,sizeof(back_sd) - ricevuti);
 		ricevuti += ret;
 	}
+
 	printf("(Main) il socket (%d) sta tornando alla home dalla room %d\n",back_sd, room_id);
 	printf("(Main) giocatori nella room %d: %d -> %d\n",room_id,stanza->numPlayers,stanza->numPlayers - 1);
+	
+	// aggiorno il numero id player nella stanza
 	stanza->numPlayers--;
-	// se non ci sono piu giocatori nella stanza uccidi il processo
-	// e rimuovi il file descriptor
+	
+	// se non ci sono piu giocatori nella stanza dealloca il des_room
+	// e rimuovi il fd dal set master
+	// (il processo room fa exit automaticamente)
+	
 	if (!stanza->numPlayers){
 		// elimina la room
 		if(closeRoom(room_id))
+			// si e' verificato un errore
 			printf("(Main) room %d non chiusa correttamente\n",room_id);
 		printf("(Main) la room %d è stata chiusa\n",room_id);
 		FD_CLR(stanza->fp[0],master);
 	}
+
 	// reinserisci sd in master
 	homeConnessione(back_sd);
 	FD_SET(back_sd,master);
 }
 
+// descrizione:
+// funzione che ritorna 1 se non c'e' nessuna room attiva
 size_t nessunaRoom()
 {
 	if (!room)
