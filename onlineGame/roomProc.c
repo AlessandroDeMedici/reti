@@ -8,7 +8,7 @@ int main(int argn, char * argv[])
 	char username[50];
 	int i;
 	int new_sd;
-	int sent, received;
+	int sent;
 	natb opcode = 0; // tipo definito in lib-reti/costanti.h
 
 	// pipe per lo scambio di dati con il processo padre
