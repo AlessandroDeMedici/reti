@@ -138,8 +138,8 @@ void * server(void * arg)
 					switch(opcode){
 						case(START_ROOM):
 							// l'utente vuole creare o entrare in una room
-							avviaRoom(i, max_sd,&master); 
-							// funzione definita in lib-reti/menu.c
+							avviaRoom(i,&max_sd,&master); 
+							// funzione definita in lib-reti/room.c
 							break;
 						case(ROOM_LIST):
 							// l'utente vuole una lista delle room attualmente attive

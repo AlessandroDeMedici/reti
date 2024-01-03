@@ -24,7 +24,7 @@ size_t sendPlayer(struct des_room *, int,char*,char padre);
 int receivePlayer(struct des_room *,char*, char padre);
 size_t startRoom(struct des_room *);
 #ifdef SERVER
-void avviaRoom(int sd, int max_sd, fd_set * master);
+void avviaRoom(int sd, int *max_sd, fd_set * master);
 void tornaIndietro(int sd, fd_set * master, struct des_room * stanza);
 size_t nessunaRoom();
 #endif

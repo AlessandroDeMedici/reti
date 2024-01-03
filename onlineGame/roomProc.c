@@ -8,6 +8,7 @@ int main(int argn, char * argv[])
 	char username[50];
 	int i;
 	int new_sd;
+	int sent, received;
 	natb opcode = 0; // tipo definito in lib-reti/costanti.h
 
 	// pipe per lo scambio di dati con il processo padre
@@ -106,8 +107,12 @@ int main(int argn, char * argv[])
 					// rilascio gli oggetti posseduti dal client
 					quitRoom(i); // funzione definita in lib-reti/room.c
 					
-					// rispedisco il fd all home
-					write(fp[1],&i,sizeof(i));
+					// rispedisco il fd alla home
+					sent = 0;
+					while (sent < sizeof(i)){
+						ret = write(fp[1],&i + sent,sizeof(i) - sent);
+						sent += ret;
+					}
 
 					// decremento il numero di players
 					players--;

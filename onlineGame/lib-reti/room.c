@@ -21,7 +21,6 @@ struct des_room * checkRoom(natl id)
 	return NULL;			// room non presente
 }
 
-
 // descrizione:
 // funzione che crea un nuovo descrittore di room con room_id id
 // e lo inserisce nella lista di rooms
@@ -68,6 +67,7 @@ size_t closeRoom(natl id)
 	while (p){
 		if (p->id == id){
 			if (!q){
+				// mi trovo in cima alla lista
 				room = p->next;
 			} else { 
 				q->next = p->next;
@@ -233,6 +233,7 @@ size_t activeRooms(char * buffer)
 		return 1;
 	}
 	while(p){
+
 		char joinable = 0;
 		if (p->status == CREATED)
 			joinable = 1;
@@ -257,7 +258,7 @@ size_t activeRooms(char * buffer)
 // sd -> descrittore del socket da inviare alla room
 // max_sd -> indice del piu alto descrittore di socket in master
 // master -> fd_set da aggiornare
-void avviaRoom(int sd, int max_sd, fd_set * master)
+void avviaRoom(int sd, int *max_sd, fd_set * master)
 {
 	struct des_connection * conn = NULL;
 	int ret = 0;
@@ -287,8 +288,8 @@ void avviaRoom(int sd, int max_sd, fd_set * master)
 		
 		// se e' stata creata bisogna inserire fp[0] della pipe in master
 		FD_SET(stanza->fp[0],master);
-		if (stanza->fp[0] > max_sd)
-			max_sd = stanza->fp[0];
+		if (stanza->fp[0] > *max_sd)
+			*max_sd = stanza->fp[0];
 
 	} else {
 		// la room esisteva di gia
