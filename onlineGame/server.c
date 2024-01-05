@@ -1,6 +1,7 @@
 #include "lib-reti.h"
 #include <pthread.h>
 
+// variabili globali di stato
 int chiusura = 0;
 int started = 0;
 
@@ -155,6 +156,7 @@ void * server(void * arg)
 			}
 		}
 	}
+	started = 0; // terminazione non prevista
 	pthread_exit(NULL);
 }
 

@@ -51,13 +51,26 @@ size_t inviaLogin(int sd,char * username, char * password)
 {
 	char buffer[100];
 	natb len = makeStringaLogin(buffer,username,password);
-	int ret;
-	ret = send(sd,&len,sizeof(len),0);
-	if (ret <= 0)
-		return 1;
-	ret = send(sd,buffer,len,0);
-	if (!ret)
-		return 1;
+	int ret, sent = 0;
+	
+	while (sent < sizeof(len)){
+		ret = send(sd,&len,sizeof(len),0);
+		if (ret == -1){
+			perror("inviaLogin - errore in fase di send");
+			return 1;
+		}
+		sent += ret;
+	}
+
+	sent = 0;
+	while(sent < len){
+		ret = send(sd,buffer + sent,len - sent,0);
+		if (ret == -1){
+			perror("inviaLogin - errore in fase di send");
+			return 1;
+		}
+		sent += ret;
+	}
 	return 0;
 }
 
@@ -76,6 +89,11 @@ size_t riceviLogin(int sd, char * username, char * password)
 	natb len;
 	int ret, received = 0;
 	ret = recv(sd,&len,sizeof(len),0);
+	if (!ret){
+		perror("(Main) il client ha chiuso la connessione improvvisamente");
+		return 1;
+	}
+
 	while (received < len){
 		ret = recv(sd,buffer + received,len - received,0);
 		if (!ret){
@@ -83,6 +101,7 @@ size_t riceviLogin(int sd, char * username, char * password)
 		}
 		received += ret;
 	}
+
 	demakeStringaLogin(buffer,username,password);
 	return 0;
 }
@@ -111,8 +130,10 @@ size_t loginUtente(int sd, char * username, char * password)
 		inviaLogin(sd,username,password);
 		// attendo la risposta del server
 		ret = recv(sd,&opcode,sizeof(opcode),0);
-		if (!ret) // il server ha chiuso la connessione
+		if (!ret){ // il server ha chiuso la connessione
+			perror("loginUtente - errore in fase di recv");
 			return 1;
+		}
 		if (opcode == OK){
 			// login completato
 			return 0;
@@ -154,14 +175,18 @@ struct user * loginServer(int sd,char * username, char * password)
 			// l'utente e' presente
 			opcode = OK;
 			ret = send(sd,&opcode,sizeof(opcode),0);
-			if (ret <= 0)
-				// si e' verificato un errore
+			if (ret == -1){
+				perror("loginServer - errore in fase di send");
 				return NULL;
+			}
 			return utente;
 		} else { 	
 			// utente non loggato correttamente
 			opcode = NOK;
 			ret = send(sd,&opcode,sizeof(opcode),0);
+			if (ret == -1){
+				perror("loginServer - errore in fase di send");
+			}
 		}
 	}
 	// ho superato il numero massimo di tentativi
@@ -184,12 +209,14 @@ size_t registerUtente(int sd, char * username, char * password)
 	printf("Password: ");
 	scanf("%s",password);
 	natb opcode;
-	natl ret;
+	int ret;
 	inviaLogin(sd,username,password);
 	ret = recv(sd,&opcode,sizeof(opcode),0);
-	if (ret <= 0)
+	if (!ret){
 		// il server si e' disconnesso o si e' verificato un errore
+		perror("registerUtente - errore in fase di send");
 		return 1;
+	}
 	if (opcode == OK){
 		// procedura di registrazione andata a buon fine
 		return 0;
@@ -220,8 +247,8 @@ struct user * registerServer(int sd, char * username, char * password)
 	if (new_user){		// era gia presente un utente con lo stesso username
 		opcode = NOK;
 		ret = send(sd,&opcode,sizeof(opcode),0); // invio il messaggio di NOK
-		if (!ret)
-			perror("registerServer - errore in fase di invio\n");
+		if (ret == -1)
+			perror("registerServer - errore in fase di send\n");
 		return NULL;
 	}
 	// posso procedere a creare un nuovo utente
@@ -231,8 +258,10 @@ struct user * registerServer(int sd, char * username, char * password)
 	
 	// invio il messaggio di OK
 	ret = send(sd,&opcode,sizeof(opcode),0);
-	if (ret <= 0)
+	if (ret == -1){
+		perror("registerServer - errore in fase di send");
 		return NULL;
+	}
 	
 	return new_user;
 }
@@ -276,8 +305,10 @@ size_t userLogin(int sd, char * username, char * password)
 
 	// invio quello che voglio fare al server (LOGIN o REGISTER)
 	ret = send(sd,&opcode,sizeof(opcode),0);
-	if (!ret)
+	if (ret == -1){
+		perror("userLogin - errore in fase di send");
 		return 1;
+	}
 
 
 	if (opcode == LOGIN){

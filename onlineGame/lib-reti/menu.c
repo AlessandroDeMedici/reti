@@ -58,9 +58,11 @@ void roomList(int sd)
 	
 	// invio opcode
 	int ret = send(sd,&opcode,sizeof(opcode),0);
-	if (ret <= 0)
+	if (ret == -1){
 		// errore nell'invio dell'opcode
+		perror("roomList - errore in fase di send");
 		return;
+	}
 
 	// ricevo la stringa
 	receiveString(sd,buffer);
@@ -85,7 +87,7 @@ size_t avviaRoom(int sd, char * arg1)
 
 	// invio il messaggio di START_ROOM
 	ret = send(sd,&opcode,sizeof(opcode),0);
-	if (!ret){
+	if (ret == -1){
 		perror("avviaRoom - errore in fase di send");
 		return 1;
 	}
@@ -93,7 +95,7 @@ size_t avviaRoom(int sd, char * arg1)
 	// invio il numero di room
 	room = htonl(room);
 	ret = send(sd,&room,sizeof(room),0);
-	if (!ret){
+	if (ret == -1){
 		perror("avviaRoom - errore in fase di send");
 		return 1;
 	}

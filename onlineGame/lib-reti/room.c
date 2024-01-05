@@ -309,7 +309,7 @@ void avviaRoom(int sd, int *max_sd, fd_set * master)
 		printf("(Main) il socket (%d) non e' entrato nella room %d perche era piena\n",sd,room_id);
 		// in questo caso notifichiamo al client che non e' stato possibile entrare con un NOK
 		ret = send(sd,&opcode,sizeof(opcode),0);
-		if (!ret)
+		if (ret == -1)
 			perror("avviaRoom - errore in fase di send");
 	}
 }

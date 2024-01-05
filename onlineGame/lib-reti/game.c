@@ -52,15 +52,26 @@ void inviaMessaggio(int id,int sd)
 	// questo e' il raro caso in cui il server soddisfi due richieste di tell allo stesso
 	// ciclo, in questo caso il messaggio dalla seconda richiesta in poi vengono scartati
 	if (buffer_id != 0xFF){
-		ret = send(sd,&opcode,sizeof(opcode),0);
-		if (!ret)
-			perror("inviaMessaggio - errore in fase di send");
+		ret = 0;
+		while (!ret){
+			ret = send(sd,&opcode,sizeof(opcode),0);
+			if (ret == -1)
+				perror("inviaMessaggio - errore in fase di send");
+		}
 		return;
 	}
 
 	// invio un OK
 	opcode = OK;
-	ret = send(sd,&opcode,sizeof(opcode),0);
+	ret = 0;
+	while (!ret){
+		ret = send(sd,&opcode,sizeof(opcode),0);
+		if (ret == -1){
+			perror("inviaMessaggio - errore in fase di send");
+			return;
+		}	
+	}
+
 
 	// adesso attendo la stringa
 	sprintf(temp,"%s: ",giocatori[pid].username);
@@ -93,10 +104,14 @@ void riceviMessaggio(int sd)
 		sent[pid] = 1;
 	} else {
 		// se non e' presente alcuna stringa
-		len = 0;
-		ret = send(sd,&len,sizeof(len),0);
-		if (!ret)
-			perror("riceviMessaggio - errore in fase di invio");
+		len = ret = 0;
+		while (!ret){
+			ret = send(sd,&len,sizeof(len),0);
+			if (ret == -1){
+				perror("riceviMessaggio - errore in fase di invio");
+				return;
+			}
+		}
 	}
 	// libero buffer_id
 	for (i = 0; i < MAX_PLAYERS; i++){
@@ -116,11 +131,26 @@ void aggiornaOggetto(int sd)
 {
 	natb id = 0;
 	struct oggetto * o;
+	int ret;
+	
 	// ricevo id dell'oggetto
-	recv(sd,&id,sizeof(id),0);
+	ret = recv(sd,&id,sizeof(id),0);
+	if (!ret){
+		perror("aggiornaOggetto - server disconnesso");
+		return;
+	}
+
 	o = &oggetti[id];
+	
 	// invia lo status aggiornato dell'oggetto
-	send(sd,&o->status,sizeof(o->status), 0);
+	ret = 0;
+	while (!ret){
+		ret = send(sd,&o->status,sizeof(o->status), 0);
+		if (ret == -1){
+			perror("aggiornaOggetto - errore in fase di send");
+			return;
+		}
+	}
 }
 
 // descrizione:
@@ -132,8 +162,15 @@ void sbloccaOggetto(int sd)
 {
 	natb id = 0;
 	struct oggetto * o = NULL;
+	int ret;
+
 	// ricevo id
-	recv(sd,&id,sizeof(id),0);
+	ret = recv(sd,&id,sizeof(id),0);
+	if (!ret){
+		perror("sbloccaOggetto - errore in fase di recv");
+		return;
+	}
+
 	// sblocco l'oggetto
 	o = &oggetti[id];
 	o->status = FREE;
@@ -149,8 +186,14 @@ void ottieniOggetto(int sd)
 	natb id = 0;
 	// devo ottenere l'indice del player
 	natb pid = getPlayerId(sd);
+	int ret;
 
-	recv(sd,&id,sizeof(id),0);
+	// ricevo id dell'oggetto
+	ret = recv(sd,&id,sizeof(id),0);
+	if (!ret){
+		perror("ottieniOggetto - errore in fase di recv");
+		return;
+	}
 
 	struct oggetto * o = &oggetti[id];
 
@@ -364,13 +407,18 @@ void sbloccaPlayers()
 {
 	int i;
 	natb opcode = OK;
+	int ret;
 
 	// ricordiamo che quando i client fanno avviaRoom rimangono
 	// in attesa di un messaggio
 	// quando la room e' piena tutti i giocatori ricevono un messaggio di OK
 	for (i = 0; i < MAX_PLAYERS; i++)
-		if (giocatori[i].p)
-			send(giocatori[i].sd,&opcode,sizeof(opcode),0);
+		if (giocatori[i].p){
+			ret = send(giocatori[i].sd,&opcode,sizeof(opcode),0);
+			if (ret == -1){
+				perror("sbloccaPlayers - errore in fase di send");
+			}
+		}
 }
 
 // descrizione:
@@ -379,7 +427,11 @@ void sbloccaPlayers()
 // sd -> descrittore del socket
 void getToken(int sd)
 {
-	send(sd,&gioco.token,sizeof(gioco.token),0);
+	int ret;
+	ret = send(sd,&gioco.token,sizeof(gioco.token),0);
+	if (ret == -1){
+		perror("getToken - errore in fase di send");
+	}
 }
 
 // descrizione:
@@ -402,11 +454,19 @@ void startTime()
 // sd -> descrittore del socket
 void ottieniTempo(int sd)
 {
+	int ret = 0, sent = 0;
+
 	time_t start_time = gioco.start_time;
 	
 	start_time = htonl(start_time);
 	
-	send(sd,&start_time,sizeof(start_time),0);
+	while (sent < 8){
+		ret = send(sd,&start_time + sent,sizeof(start_time) - sent,0);
+		sent += ret;
+		if (ret == -1){
+			perror("ottieniTempo - errore in fase di send");
+		}
+	}
 }
 
 
@@ -453,13 +513,28 @@ void inviaMessaggio(char * arg)
 {
 	// invio opcode
 	natb opcode = INVIA_MESSAGGIO;
-	int ret = send(sd,&opcode,sizeof(opcode),0);
-	
+	int ret = 0;
+
+	// controllo sugli input
+	if (!arg){
+		printf("tell - missing message\n");
+		return;
+	}
+
+	while (!ret){
+		ret = send(sd,&opcode,sizeof(opcode),0);
+		if (ret == -1){
+			perror("inviaMessaggio - errore in fase di invio");
+		}
+	}
+
 	// attendo per un ok o un nok
+	ret = 0;
 	ret = recv(sd,&opcode,sizeof(opcode),0);
 	if (ret <= 0){
-		perror("Inviamessaggio - errore in fase di receive");
+		perror("Inviamessaggio - errore in fase di invio");
 	}
+
 	if (opcode == NOK){
 		printf("Non e' stato possibile inviare il messaggio\n");
 		return;
@@ -478,24 +553,47 @@ void inviaMessaggio(char * arg)
 // funzione chiamata dal client per inviare una richiesta di RICEVI_MESSAGGIO
 void riceviMessaggio()
 {
+	natl len = 0;
+	int ret = 0, received = 0;
+	
 	// invio opcode
 	natb opcode = RICEVI_MESSAGGIO;
-	int ret = send(sd,&opcode,sizeof(opcode),0);
-	natl len = 0;
-	if (ret <= 0) {
-		perror("riceviMessaggio - errore in fase di send");
+	while (!ret) {
+		ret = send(sd,&opcode,sizeof(opcode),0);
+		if (ret == -1){
+			perror("riceviMessaggio - errore in fase di send");
+			return;
+		}
 	}
 
 	// ricevo la lunghezza della stringa
-	ret = recv(sd,&len,sizeof(len),0);
+	ret = 0;
+	while (received < sizeof(len)){
+		ret = recv(sd,&len + received,sizeof(len) - received,0);
+		received += ret;
+		if (!ret){
+			perror("riceviMessaggio - errore in fase di recv");
+			return;
+		}
+	}
+
 	len = ntohl(len);
+	
 	if (!len){
 		// se la lunghezza e' nulla ritorno
 		return;
 	}
 	
 	// ricevo la stringa
-	ret = recv(sd,buffer,len,0);
+	ret = received = 0;
+	while (received < len){
+		ret = recv(sd,buffer + received,len - received,0);
+		received += ret;
+		if (!ret){
+			perror("riceviMessaggio - errore in fase di recv");
+			return;
+		}
+	}
 	printf("\t\t");
 	stampaAnimata(buffer);
 	printf("\n");
@@ -514,11 +612,17 @@ void aggiornaOggetto(struct oggetto * o)
 	natb id = getObjectId(o);
 	
 	// invio opcode
-	send(sd,&opcode,sizeof(opcode),0);
-	
+	ret = send(sd,&opcode,sizeof(opcode),0);
+	if (ret == -1){
+		perror("aggiornaOggetto - errore in fase di send");
+	}
+
 	// invio id dell'oggetto
-	send(sd,&id,sizeof(id),0);
-	
+	ret = send(sd,&id,sizeof(id),0);
+	if (ret == -1){
+		perror("aggiornaOggetto - errore in fase di send");
+	}
+
 	// ricezione dello status
 	ret = recv(sd,&o->status,sizeof(status),0);
 	
@@ -534,17 +638,17 @@ void sbloccaOggetto(struct oggetto * o)
 {
 	natb id = getObjectId(o);
 	natb opcode = UNLOCK;
-	int ret;
+	int ret = 0;
 
 	// invio opcode
 	ret = send(sd,&opcode,sizeof(opcode),0);
-	if (!ret){
+	if (ret == -1){
 		perror("sbloccaOggetto - errore in fase di send");
 		return;
 	}
 	// invio id
 	ret = send(sd,&id,sizeof(id),0);
-	if (!ret){
+	if (ret == -1){
 		perror("sbloccaOggetto - errore in fase di send");
 		return;
 	}
@@ -558,11 +662,20 @@ void ottieniOggetto(struct oggetto * o)
 {
 	natb id = getObjectId(o);
 	natb opcode = TAKE;
+	int ret;
 
 	// invio opcode
-	send(sd,&opcode,sizeof(opcode),0);
+	ret = send(sd,&opcode,sizeof(opcode),0);
+	if (ret == -1){
+		perror("ottieniOggetto - errore in fase di send");
+		return;
+	}
 	// invio id
-	send(sd,&id,sizeof(id),0);
+	ret = send(sd,&id,sizeof(id),0);
+	if (ret == -1){
+		perror("ottieniOggetto - errore in fase di send");
+		return;
+	}
 }
 
 
@@ -802,17 +915,31 @@ size_t aggiungiInventario(struct oggetto * o)
 void usaOggetto(struct oggetto * o1, struct oggetto * o2)
 {
 	natb id1, id2 = 0xFF, opcode = TAKE;
+	int ret = 0;
 	// ottengo gli id degli oggetti
 	id1 = getObjectId(o1);
 	if (o2)
 		id2 = getObjectId(o2);
 
 	// invio opcode
-	send(sd,&opcode,sizeof(opcode),0);
+	ret = send(sd,&opcode,sizeof(opcode),0);
+	if (ret == -1){
+		perror("usaOggetto - errore in fase di send");
+		return;
+	}
 
 	// invio id degli oggetti
-	send(sd,&id1,sizeof(id1),0);
-	send(sd,&id2,sizeof(id2),0);
+	ret = send(sd,&id1,sizeof(id1),0);
+	if (ret == -1){
+		perror("usaOggetto - errore in fase di send");
+		return;
+	}
+
+	ret = send(sd,&id2,sizeof(id2),0);
+	if (ret == -1){
+		perror("usaOggetto - errore in fase di send");
+		return;
+	}
 }
 
 // descrizione:
@@ -894,8 +1021,12 @@ void objs()
 void quitRoom()
 {
 	natb opcode = QUIT_ROOM;
-	send(sd,&opcode,sizeof(opcode),0);
-	
+	int ret = send(sd,&opcode,sizeof(opcode),0);
+	if (ret == -1){
+		perror("quitRoom - errore in fase di send");
+		return;
+	}
+
 	printf("Sto tornando alla home...\n");
 	printHome();
 }
@@ -1016,10 +1147,21 @@ void stampaTempo()
 void getToken()
 {
 	natb opcode = UPDATE_TOKEN;
+	int ret;
+
 	// invio opcode
-	send(sd,&opcode,sizeof(opcode),0);
+	ret = send(sd,&opcode,sizeof(opcode),0);
+	if (ret == -1){
+		perror("getToken - errore in fase di send");
+		return;
+	}
+
 	// ricezione numero di token
-	recv(sd,&gioco.token,sizeof(gioco.token),0);
+	ret = recv(sd,&gioco.token,sizeof(gioco.token),0);
+	if (!ret){
+		perror("getToken - errore in fase di recv");
+		return;
+	}
 }
 
 // descrizione:
@@ -1027,8 +1169,13 @@ void getToken()
 void token()
 {
 	natb opcode = INC_TOKEN;
+	int ret;
+
 	// invio opcode
-	send(sd,&opcode,sizeof(opcode),0);
+	ret = send(sd,&opcode,sizeof(opcode),0);
+	if (ret == -1){
+		perror("token - errore in fase di send");
+	}
 }
 
 // descrizione:
@@ -1037,12 +1184,26 @@ void token()
 void ottieniTempo()
 {
 	natb opcode = GET_TIME;
+	int ret, received = 0;
+
 	// invio opcode
-	send(sd,&opcode,sizeof(opcode),0);
+	ret = send(sd,&opcode,sizeof(opcode),0);
+	if (ret == -1){
+		perror("ottieniTempo - errore in fase di send");
+		return;
+	}
 
 	// ottengo lo start_time
-	recv(sd,&gioco.start_time,sizeof(gioco.start_time),0);
-	
+	received = 0;
+	while (received < sizeof(gioco.start_time)){
+		ret = recv(sd,&gioco.start_time + received,sizeof(gioco.start_time) - received,0);
+		received += ret;
+		if (!ret){
+			perror("ottieniTempo - errore in fase di recv");
+			return;
+		}
+	}
+
 	// lo converto nel formato giusto
 	gioco.start_time = ntohl(gioco.start_time);
 }
