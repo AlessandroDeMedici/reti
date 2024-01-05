@@ -8,6 +8,20 @@ int main (int argn, char * argv[])
 	char username[64];
 	char password[64];
 	
+	// controllo sugli input
+	if (argn < 2){
+		printf("client - missing port\n");
+		return 1;
+	}
+
+	// inizializzazione della porta
+	port = atoi(argv[1]);
+	if (port < 0){
+		printf("client - bad port\n");
+		return 1;
+	}
+		
+
 	// inizializzazione del socket
 	main_socket = socket(AF_INET, SOCK_STREAM, 0);
 	
@@ -21,7 +35,7 @@ int main (int argn, char * argv[])
 	// inizializzazione indirizzo del server
 	memset(&server_addr, 0, sizeof(server_addr));
 	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(4242);
+	server_addr.sin_port = htons(port);
 	inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr);
 
 	// connessione con il server

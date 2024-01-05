@@ -15,9 +15,6 @@ server: server.o $(LIB_OBJS)
 client: client.o $(LIB_OBJS)
 	$(CC) $(CFLAGS) -o client client.o $(patsubst lib-reti/%.c, lib-reti/client_%.o, $(LIB_SRCS))
 
-other: client.o $(LIB_OBJS)
-	$(CC) $(CFLAGS) -o other client.o $(patsubst lib-reti/%.c, lib-reti/client_%.o, $(LIB_SRCS))
-
 room: room.o $(LIB_OBJS)
 	$(CC) $(CFLAGS) -o room room.o $(patsubst lib-reti/%.c, lib-reti/server_%.o, $(LIB_SRCS)) -DSERVER
 
@@ -38,5 +35,5 @@ lib-reti/server_%.o: lib-reti/%.c
 	$(CC) $(CFLAGS) -c $< -o $@ -DSERVER
 
 clean:
-	rm -f server client room other *.o lib-reti/*.o
+	rm -f server client room *.o lib-reti/*.o
 
