@@ -2,7 +2,6 @@
 
 int main (int argn, char * argv[]) 
 {
-	int port;
 	int ret, main_socket;
 	struct sockaddr_in server_addr; 
 	char username[64];

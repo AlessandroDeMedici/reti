@@ -9,8 +9,8 @@ void * server(void * arg)
 {
 	int port;
 	int i;
-	char username[50];
-	char password[50];
+	char username[64];
+	char password[64];
 	struct user * utente;
 	struct des_connection * connessione;
 	struct des_room * stanza;
@@ -105,20 +105,12 @@ void * server(void * arg)
 				// si inizializzano la nuova connessione e l'utente
 				// e si procede con la fase di login o di registrazione
 				connessione = nuovaConnessione(new_sd); // definita in lib-reti/connessione.c
-				utente = serverLogin(new_sd,username,password); // definita in lib-reti/login.c
 
-				if (utente){
-					// login o registrazione completati correttamente
-					loginConnessione(connessione,utente); // definita in lib-reti/connessione.c
-					FD_SET(new_sd,&master);
-					if (new_sd > max_sd){
-						max_sd = new_sd;
-					}
-				} else {
-					// login o registrazione non completati correttamente
-					chiudiConnessione(new_sd); // definita in lib-reti/connessione.c
-					close(new_sd);
-				}
+				FD_SET(new_sd,&master);
+
+				if (new_sd > max_sd)
+					max_sd = new_sd;
+
 			} else {
 				// un file descriptor e' pronto
 				// questo file descriptor puo essere associato ad una pipe (e quindi una room)
@@ -145,6 +137,22 @@ void * server(void * arg)
 						case(ROOM_LIST):
 							// l'utente vuole una lista delle room attualmente attive
 							roomList(i); // funzione definita in lib-reti/menu.c
+							break;
+						case(LOGIN):
+							utente = loginServer(i,username,password);
+							if (utente){
+								printf("(Main) %s, %s\n",username,password);
+								connessione = getConnessione(i);
+								loginConnessione(connessione,utente);
+							}
+							break;
+						case(REGISTER):
+							utente = registerServer(i,username,password);
+							if (utente){
+								connessione = getConnessione(i);
+								loginConnessione(connessione,utente);
+								printf("(Main) %s, %s\n",username,password);
+							}
 							break;
 						default:
 							break;

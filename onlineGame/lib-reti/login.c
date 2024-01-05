@@ -17,7 +17,7 @@ size_t makeStringaLogin(char * buffer, char * username, char * password)
 	buffer[i++] = ';';
 	for (; password[j] != '\0'; j++)
 		buffer[j + i] = password[j];
-	buffer[i + j++] = '\0';
+	buffer[i + j] = '\0';
 	return strlen(buffer) + 1;
 } 
 
@@ -33,7 +33,7 @@ void demakeStringaLogin(char * buffer, char * username, char * password)
 	for (; buffer[i] != ';'; i++)
 		username[i] = buffer[i];
 	username[i++] = '\0';
-	for (;buffer[j] != '\0';j++)
+	for (;buffer[j + i] != '\0';j++)
 		password[j] = buffer[i + j];
 	password[j] = '\0';
 }
@@ -88,6 +88,7 @@ size_t riceviLogin(int sd, char * username, char * password)
 	char buffer[100];
 	natb len;
 	int ret, received = 0;
+
 	ret = recv(sd,&len,sizeof(len),0);
 	if (!ret){
 		perror("(Main) il client ha chiuso la connessione improvvisamente");
@@ -126,6 +127,10 @@ size_t loginUtente(int sd, char * username, char * password)
 		scanf("%s",username);
 		printf("> Password: ");
 		scanf("%s",password);
+
+		opcode = LOGIN;
+		ret = send(sd,&opcode,sizeof(opcode),0);
+
 		// invio la stringa di login
 		inviaLogin(sd,username,password);
 		// attendo la risposta del server
@@ -163,33 +168,31 @@ struct user * loginServer(int sd,char * username, char * password)
 	natb opcode = 0;
 	natl ret;
 	struct user * utente = NULL;
-	int i;
-	// ricevo la stringa di login per numero massimo di volte MAX_TENTATIVI
-	for (i = 0; i < MAX_TENTATIVI; i++){	
-		// il client si e' disconnesso
-		if (riceviLogin(sd,username,password))
+	
+
+	if (riceviLogin(sd,username,password))
+		return NULL;
+	// controllo se e' presente un utente con tali username e password
+	utente = controllaUtente(username,password);
+	if (utente){
+		printf("(Main) (%d) %s e' acceduto correttamente\n",sd,username);
+		// l'utente e' presente
+		opcode = OK;
+		ret = send(sd,&opcode,sizeof(opcode),0);
+		if (ret == -1){
+			perror("loginServer - errore in fase di send");
 			return NULL;
-		// controllo se e' presente un utente con tali username e password
-		utente = controllaUtente(username,password);
-		if (utente){ 	
-			// l'utente e' presente
-			opcode = OK;
-			ret = send(sd,&opcode,sizeof(opcode),0);
-			if (ret == -1){
-				perror("loginServer - errore in fase di send");
-				return NULL;
-			}
-			return utente;
-		} else { 	
-			// utente non loggato correttamente
-			opcode = NOK;
-			ret = send(sd,&opcode,sizeof(opcode),0);
-			if (ret == -1){
-				perror("loginServer - errore in fase di send");
-			}
+		}
+		return utente;
+	} else { 	
+		// utente non loggato correttamente
+		printf("(Main) (%d) ha provato ad accedere\n",sd);
+		opcode = NOK;
+		ret = send(sd,&opcode,sizeof(opcode),0);
+		if (ret == -1){
+			perror("loginServer - errore in fase di send");
 		}
 	}
-	// ho superato il numero massimo di tentativi
 	return NULL;
 } 
 
@@ -208,8 +211,11 @@ size_t registerUtente(int sd, char * username, char * password)
 	scanf("%s",username);
 	printf("Password: ");
 	scanf("%s",password);
-	natb opcode;
+	natb opcode = REGISTER;
 	int ret;
+
+	ret = send(sd,&opcode,sizeof(opcode),0);
+
 	inviaLogin(sd,username,password);
 	ret = recv(sd,&opcode,sizeof(opcode),0);
 	if (!ret){
@@ -245,6 +251,7 @@ struct user * registerServer(int sd, char * username, char * password)
 	// creo un nuovo utente con queste credenziali
 	new_user = controllaUsername(username);
 	if (new_user){		// era gia presente un utente con lo stesso username
+		printf("(Main) (%d) ha provato a registrarsi senza successo\n",sd);
 		opcode = NOK;
 		ret = send(sd,&opcode,sizeof(opcode),0); // invio il messaggio di NOK
 		if (ret == -1)
@@ -256,6 +263,8 @@ struct user * registerServer(int sd, char * username, char * password)
 	if (new_user)
 		opcode = OK;
 	
+
+	printf("(Main) (%d) %s si e' registrato correttamente\n",sd,username);
 	// invio il messaggio di OK
 	ret = send(sd,&opcode,sizeof(opcode),0);
 	if (ret == -1){
@@ -301,13 +310,6 @@ size_t userLogin(int sd, char * username, char * password)
 			break;
 		} else
 			printf("\033[A\r\033[K> ");
-	}
-
-	// invio quello che voglio fare al server (LOGIN o REGISTER)
-	ret = send(sd,&opcode,sizeof(opcode),0);
-	if (ret == -1){
-		perror("userLogin - errore in fase di send");
-		return 1;
 	}
 
 

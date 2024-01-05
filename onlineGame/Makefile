@@ -7,7 +7,7 @@ LIB_SRCS = $(wildcard lib-reti/*.c)
 # Lista di tutti i file oggetto generati dalla compilazione dei file nella cartella lib-reti
 LIB_OBJS = $(patsubst lib-reti/%.c, lib-reti/client_%.o, $(LIB_SRCS)) $(patsubst lib-reti/%.c, lib-reti/server_%.o, $(LIB_SRCS))
 
-all: server client room
+all: server client room other
 
 server: server.o $(LIB_OBJS)
 	$(CC) $(CFLAGS) -o server server.o $(patsubst lib-reti/%.c, lib-reti/server_%.o, $(LIB_SRCS)) -DSERVER -pthread

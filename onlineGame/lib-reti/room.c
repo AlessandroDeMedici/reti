@@ -95,7 +95,7 @@ size_t closeRoom(natl id)
 size_t sendPlayer(struct des_room * p, int sd, char * username, char padre)
 {
 	int invio;
-	int len = strlen(username);
+	int len = strlen(username) + 1;
 	int ret;
 
 	if (!p)
