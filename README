@@ -1,1 +1,56 @@
+FAQ:
+
+- Cosa succede quando un utente si disconnette inavvertitamente?
+	
+	le operazioni di send e recv sono strutturate in questo modo:
+
+		ogni volta che si effettua un'operazione di lettura o di scrittura
+		vengono effettuati i dovuti controlli:
+			
+			se stavamo inviando piu' di un byte
+			allora vengono ritrasmessi i byte non inviati
+
+			se un host si disconnette (ritorno 0 recv)
+			allora la ricezione viene interrotta
+
+			se si verifica un errore (ritorno -1 send e recv)
+			allora la comunicazione viene interrotta
+
+			la gestione della situazione di errore in caso di ritorno 0 o -1 varia a seconda
+			che questo avvenga lato client o lato server
+
+			quando questo avviene lato client segnaliamo l'errore (perror)
+			e chiudiamo l'applicazione
+
+		 	quando questo avviene lato server non vogliamo che l'applicazione venga chiusa
+		 	dato che stiamo gestendo piu client contemporaneamente quindi:
+		 	
+				1. viene segnalato l'errore sullo STDERR
+
+				2. inizia una cascata di operazioni di return dalla funzione piu interna
+				a quella piu esterna (le funzioni sono tutte strutturate in modo che ritornino
+				un valore negativo in caso di errore)
+
+				3. una volta raggiunto il ciclo principale 
+				(sia nel caso della room che quello della home)
+				il processo server continua con la sua esecuzione,
+				la differenza e' che adesso il nostro socket descriptor 
+				sara' pronto con valore 0 (la connessione e' stata chiusa)
+
+				4. se ci troviamo nella room allora rispediamo (tramite pipeline) 
+				il sd alla home che aggiornera' le strutture e chiudera' il socket descriptor
+				se ci troviamo invece nella home viene compiuta immediatamente questa operazione
+
+- Perche' non ci sono i semafori per la gestione di risorse comuni?
+
+	Il motivo risiede proprio nelle scelte progettuali, non avendo una gestione multithread
+	ma usando la tecnica dell I/O Multiplexing con socket BLOCCANTI, seppure si gestiscano
+	piu socket contemporaneamente, le singole richieste vengono soddisfatte una alla volta e atomicamente.
+
+	Il parallelismo si ha soltanto nella gestione degli utenti della home e quelli delle room
+	gestiti con piu processi (uno per la home ed uno per ogni room). 
+	Tuttavia nei sistemi operativi UNIX e UNIX-like, nonostante i processi condividano il codice,
+	hanno uno spazio di indirizzamento privato per i dati e per lo stack (modello a memoria locale) 
+	e dunque il problema delle zone critiche non si pone.
+
 
