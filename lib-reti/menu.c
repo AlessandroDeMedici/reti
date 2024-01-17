@@ -124,7 +124,7 @@ void printHome()
 	printf("Benvenuto nel main menu:\n");
 	printf("start [room]:\tavvia la room con ID [room]\n");
 	printf("list:\t\tcontrolla tutte le rooma attive\n");
-	printf("logout:\t\teffettua la disconnessione");
+	printf("logout:\t\teffettua la disconnessione\n");
 	printf("end:\t\tesci e chiudi la connessione\n");
 	printf(ANSI_GREEN "*****************************************************\n" ANSI_RESET);
 }
