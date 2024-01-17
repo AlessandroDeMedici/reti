@@ -42,6 +42,7 @@ size_t sendString(int sd, char * string)
 	return 0;
 }
 
+
 // descrizione:
 // funzione generica per la ricezione di stringhe
 // il protocollo di ricezione e':
@@ -101,3 +102,13 @@ void stampaAnimata(char * buffer)
 	}
 }
 
+
+
+// descrizione:
+// funzione che pulisce il buffer di sistema
+// dello stdin
+void pulisciBuffer()
+{
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF);
+}

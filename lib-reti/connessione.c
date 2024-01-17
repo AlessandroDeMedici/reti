@@ -115,6 +115,18 @@ size_t playingConnessione(int sd)
 	return 0;
 }
 
+
+// descrizione:
+// modifica lo status della connessione in NOT_LOGGED (il giocatore ha fatto logout o non e' ancora collegato)
+size_t logoutConnessione(int sd)
+{
+	struct des_connection * p = getConnessione(sd);
+	if (!p)
+		return 1;
+	p->status = NOT_LOGGED;
+	return 0;
+}
+
 // descrizione:
 // modifica lo status della connessione in logged (il player si trova nella home)
 // argomenti:
@@ -139,4 +151,25 @@ size_t nessunaConnessione()
 		return 1;
 	return 0;
 }
+
+
+// descrizione:
+// funzione usata dal client per inviare una richiesta di logout
+// argomenti:
+// sd -> descrittore del socket
+// ritorno:
+// la funzione ritorna 0 in caso di successo, 1 altrimenti
+size_t logout(int sd)
+{
+	natb opcode = LOGOUT;
+	int ret = send(sd,&opcode,sizeof(opcode),0);
+	if (ret <= 0){
+		perror("logout - errore in fase di send");
+		return 1;
+	}
+	return 0;
+}
+
+
+
 

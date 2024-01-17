@@ -30,6 +30,7 @@ int main (int argn, char * argv[])
 		return 1;
 	}
 
+login:
 	// fase di login o di register
 	if (userLogin(main_socket,username,password)){ // funzione definita in lib-reti/login.c
 		close(main_socket);
@@ -41,6 +42,9 @@ int main (int argn, char * argv[])
 	
 	// stampo il menu principale
 	printHome();	// definita in lib-reti/menu.c
+
+	// pulisco il buffer di sistema dello stdin
+	pulisciBuffer();
 
 	while (1){
 
@@ -89,9 +93,25 @@ int main (int argn, char * argv[])
 		} else if (!strcmp(command,"list")){
 			// l'utente vuole una lista delle room attualmente attive
 			roomList(main_socket); // funzione definita in lib-reti/menu.c
-		} else if (!strcmp(command,"end"))
+		} else if (!strcmp(command,"end")){
 			// l'utente vuole chiudere l'applicazione
 			break;
+		} else if (!strcmp(command,"logout")){
+			// l'utente vuole fare logout
+			logout(main_socket);
+			goto login;
+			// nonostante le istruzioni di salto nei linguaggi ad alto livello sia buona
+			// norma evitarle, cosi facendo non bisogna mantenere uno stato del giocatore
+			// lato client
+			//
+			// da un lato il client non puo inviare login se gia acceduto
+			// e non puo inviare logout se non acceduto
+			//
+			// dall'altro lato il server non puo ricevere login 
+			// se il giocatore ha gia fatto l'accesso
+			// e non puo ricevere logout se il giocatore
+			// non ha gia fatto l'accesso
+		}
 		else
 			// l'utente ha inserito un comando scorretto, cancello il commando
 			printf("\033[A\r\033[K");

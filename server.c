@@ -139,20 +139,26 @@ void * server(void * arg)
 							roomList(i); // funzione definita in lib-reti/menu.c
 							break;
 						case(LOGIN):
+							// l'utente vuole fare login
 							utente = loginServer(i,username,password);
 							if (utente){
-								printf("(Main) %s, %s\n",username,password);
 								connessione = getConnessione(i);
 								loginConnessione(connessione,utente);
 							}
 							break;
 						case(REGISTER):
+							// l'utente vuole registrarsi
 							utente = registerServer(i,username,password);
 							if (utente){
 								connessione = getConnessione(i);
 								loginConnessione(connessione,utente);
-								printf("(Main) %s, %s\n",username,password);
 							}
+							break;
+						case(LOGOUT):
+							// l'utente vuole fare logout
+							logoutConnessione(i);
+							connessione = getConnessione(i);
+							printf("(Main) (%d) %s ha fatto logout\n",i,connessione->utente->username);
 							break;
 						default:
 							break;
