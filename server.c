@@ -141,21 +141,31 @@ void * server(void * arg)
 						case(LOGIN):
 							// l'utente vuole fare login
 							utente = loginServer(i,username,password);
+							// funzione definita in lib-reti/login.c
 							if (utente){
+								// login effettuato correttamente
+								// aggiorno la connessione
 								connessione = getConnessione(i);
 								loginConnessione(connessione,utente);
+								// funzione definita in lib-reti/connessione.c
 							}
 							break;
 						case(REGISTER):
 							// l'utente vuole registrarsi
 							utente = registerServer(i,username,password);
+							// funzione definita in lib-reti/login.c
 							if (utente){
+								// registrazione effettuata correttamente
+								// aggiorno la connessione
 								connessione = getConnessione(i);
 								loginConnessione(connessione,utente);
+								// funzione definita in lib-reti/connessione.c
 							}
 							break;
 						case(LOGOUT):
 							// l'utente vuole fare logout
+							// aggiorno la connessione
+							// funzione definita in lib-reti/connessione.c
 							logoutConnessione(i);
 							connessione = getConnessione(i);
 							printf("(Main) (%d) %s ha fatto logout\n",i,connessione->utente->username);
@@ -267,6 +277,6 @@ int main (int argn, char * argv[])
 		}
 	}
 	return 0;
-}
+} 
 
 

@@ -42,7 +42,7 @@ void printMenu()
 {
 	printf(ANSI_GREEN "******************** ESCAPE ROOM ********************\n" ANSI_RESET);
 	printf("Benvenuto sul server\n");
-	printf("login:\t\tfai login\nregister:\tregistati\n");
+	printf("login:\t\teffettua l'accesso\nregister:\teffettua la registrazione\n");
 	printf(ANSI_GREEN "*****************************************************\n" ANSI_RESET);
 	printf("> ");
 }
@@ -124,6 +124,7 @@ void printHome()
 	printf("Benvenuto nel main menu:\n");
 	printf("start [room]:\tavvia la room con ID [room]\n");
 	printf("list:\t\tcontrolla tutte le rooma attive\n");
+	printf("logout:\t\teffettua la disconnessione");
 	printf("end:\t\tesci e chiudi la connessione\n");
 	printf(ANSI_GREEN "*****************************************************\n" ANSI_RESET);
 }
