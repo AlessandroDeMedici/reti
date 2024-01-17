@@ -102,7 +102,7 @@ size_t avviaRoom(int sd, char * arg1)
 
 
 	// attendo il messaggio di OK
-	printf("Waiting for players %d...\n",htonl(room));
+	printf("(room %d) Waiting for players...\n",htonl(room));
 	ret = recv(sd,&opcode,sizeof(opcode),0);
 	if (!ret){
 		perror("avviaRoom - errore in fase di recv");
