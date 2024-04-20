@@ -137,6 +137,7 @@ void printHelp()
 	printf("Comandi:\nlook [oggetto|location]\t\tstampa la descrizione di un oggetto o location\n");
 	printf("take [oggetto]\t\t\tsblocca o ottieni un oggetto\n");
 	printf("use [oggetto1] [oggetto2]\tusa un oggetto\n");
+	printf("objs\t\t\t\tstampa il tuo inventario\n");
 	printf("time\t\t\t\tottieni il tempo rimanente\n");
 	printf("tell [messaggio]\t\tinvia il [messaggio] a tutti i player\n");
 	printf("help\t\t\t\tstampa nuovamente questo menu con i comandi\n");
